@@ -1,16 +1,15 @@
+import { forwardRef, InjectionToken, Type } from '@angular/core';
 import {
-  ControlValueAccessor,
-  NG_VALUE_ACCESSOR,
-  NG_VALIDATORS,
-  ValidationErrors,
-  FormControl,
-  FormArray,
   AbstractControl,
+  ControlValueAccessor,
+  FormArray,
+  FormControl,
   FormGroup,
+  NG_VALUE_ACCESSOR,
+  ValidationErrors,
 } from '@angular/forms';
-import { InjectionToken, Type, forwardRef, OnDestroy } from '@angular/core';
 import { Observable, Subject, timer } from 'rxjs';
-import { takeUntil, debounce } from 'rxjs/operators';
+import { debounce, takeUntil } from 'rxjs/operators';
 import { SUB_FORM_COMPONENT_TOKEN } from './ngx-sub-form-tokens';
 import { NgxSubFormComponent } from './ngx-sub-form.component';
 
@@ -23,6 +22,8 @@ export type ControlMap<T, V> = { [K in keyof T]-?: V };
 export type ControlsType<T> = {
   [K in keyof T]-?: T[K] extends any[] ? TypedFormArray<T[K]> : TypedFormControl<T[K]> | TypedFormGroup<T[K]>;
 };
+
+export type OneOfControlsTypes<T = any> = ControlsType<T>[keyof ControlsType<T>];
 
 export type FormErrorsType<T> = {
   [K in keyof T]-?: T[K] extends any[] ? (null | ValidationErrors)[] : ValidationErrors;
@@ -90,11 +91,11 @@ export function subformComponentProviders(
       useExisting: forwardRef(() => component),
       multi: true,
     },
-    {
-      provide: NG_VALIDATORS,
-      useExisting: forwardRef(() => component),
-      multi: true,
-    },
+    // {
+    //   provide: NG_VALIDATORS,
+    //   useExisting: forwardRef(() => component),
+    //   multi: true,
+    // },
     {
       provide: SUB_FORM_COMPONENT_TOKEN,
       useExisting: forwardRef(() => component),
@@ -124,7 +125,7 @@ export const NGX_SUB_FORM_HANDLE_VALUE_CHANGES_RATE_STRATEGIES = {
  * If the component already has a `ngOnDestroy` method defined, it will call this first.
  * Note that the component *must* implement OnDestroy for this to work (the typings will enforce this anyway)
  */
-export function takeUntilDestroyed<T>(component: OnDestroy): (source: Observable<T>) => Observable<T> {
+export function takeUntilDestroyed<T>(component: any): (source: Observable<T>) => Observable<T> {
   return (source: Observable<T>): Observable<T> => {
     const onDestroy = new Subject();
     const previousOnDestroy = component.ngOnDestroy;

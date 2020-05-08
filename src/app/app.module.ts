@@ -31,6 +31,7 @@ import { MainComponent } from './main/main.component';
 import { CrewMemberComponent } from './main/listing/listing-form/vehicle-listing/crew-members/crew-member/crew-member.component';
 import { DisplayCrewMembersPipe } from './main/listings/display-crew-members.pipe';
 import { CrewMembersComponent } from './main/listing/listing-form/vehicle-listing/crew-members/crew-members.component';
+import { TestNewVersionComponent } from './test-new-version/test-new-version.component';
 
 const MATERIAL_MODULES = [
   LayoutModule,
@@ -64,6 +65,7 @@ const MATERIAL_MODULES = [
     CrewMembersComponent,
     CrewMemberComponent,
     DisplayCrewMembersPipe,
+    TestNewVersionComponent,
   ],
   exports: [DroidProductComponent],
   imports: [

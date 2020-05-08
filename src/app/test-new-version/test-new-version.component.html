@@ -1,0 +1,11 @@
+<div [formGroup]="ngxSubForm.formGroup">
+  <input type="string" [formControlName]="ngxSubForm.formControlNames.subPropA" />
+</div>
+
+value:
+<br />
+<pre>{{ ngxSubForm.formGroup.value | json }}</pre>
+
+errors:
+<br />
+<pre>{{ ngxSubForm.formGroup.errors | json }}</pre>

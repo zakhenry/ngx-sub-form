@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { FormControl, FormGroup } from '@angular/forms';
 
 @Component({
   selector: 'app-root',
@@ -6,5 +7,21 @@ import { Component } from '@angular/core';
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent {
-  title = 'ngx-sub-form-demo';
+  public formGroup: FormGroup = new FormGroup({
+    a: new FormControl({ subPropA: 'test' }),
+  });
+
+  constructor() {
+    this.formGroup.valueChanges.subscribe(x => console.log('[PARENT] form updated:', x));
+
+    setTimeout(() => {
+      // console.log('[PARENT] updating form 1');
+      this.formGroup.setValue({ a: { subPropA: 'hello' } }, { emitEvent: false });
+    }, 2000);
+
+    // setTimeout(() => {
+    //   console.log('[PARENT] updating form 2');
+    //   this.formGroup.setValue({ a: 'hello 2' });
+    // }, 4000);
+  }
 }
