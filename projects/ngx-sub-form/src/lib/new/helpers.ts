@@ -1,6 +1,7 @@
-import { ControlValueAccessor, Validator } from '@angular/forms';
+import { AbstractControlOptions, ControlValueAccessor, FormGroup, Validator } from '@angular/forms';
 import { Observable, ReplaySubject } from 'rxjs';
 import { ControlsNames, FormErrors, OneOfControlsTypes, TypedFormGroup } from '../ngx-sub-form-utils';
+import { NgxSubFormRemapOptions } from './ngx-sub-form';
 
 export const deepCopy = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 export type Nilable<T> = T | null | undefined;
@@ -99,3 +100,22 @@ export const getFormGroupErrors = <ControlInterface, FormInterface>(
   // todo remove any
   return Object.assign<any, any, any>({}, formGroup.errors ? { formGroup: formGroup.errors } : {}, formErrors);
 };
+
+export function createFormDataFromOptions<ControlInterface, FormInterface>(
+  options: NgxSubFormRemapOptions<ControlInterface, FormInterface>,
+) {
+  const formGroup: TypedFormGroup<FormInterface> = new FormGroup(
+    options.formControls,
+    options.formGroupOptions as AbstractControlOptions,
+  ) as TypedFormGroup<FormInterface>;
+  const defaultValues: FormInterface = deepCopy(formGroup.value);
+  const formGroupKeys: (keyof FormInterface)[] = Object.keys(defaultValues) as (keyof FormInterface)[];
+  const formControlNames: ControlsNames<FormInterface> = formGroupKeys.reduce<ControlsNames<FormInterface>>(
+    (acc, curr) => {
+      acc[curr] = curr;
+      return acc;
+    },
+    {} as ControlsNames<FormInterface>,
+  );
+  return { formGroup, defaultValues, formControlNames };
+}

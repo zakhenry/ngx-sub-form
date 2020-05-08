@@ -1,12 +1,11 @@
 import { ɵmarkDirty as markDirty } from '@angular/core';
-import { AbstractControlOptions, FormGroup } from '@angular/forms';
 import { forkJoin, Observable } from 'rxjs';
 import { delay, map, shareReplay, switchMap, tap } from 'rxjs/operators';
-import { Controls, ControlsNames, isNullOrUndefined, takeUntilDestroyed, TypedFormGroup } from '../ngx-sub-form-utils';
+import { Controls, isNullOrUndefined, takeUntilDestroyed } from '../ngx-sub-form-utils';
 import { FormGroupOptions } from '../ngx-sub-form.types';
 import {
   ControlValueAccessorComponentInstance,
-  deepCopy,
+  createFormDataFromOptions,
   getControlValueAccessorBindings,
   getFormGroupErrors,
   NgxSubForm,
@@ -27,18 +26,8 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
   componentInstance: ControlValueAccessorComponentInstance,
   options: NgxSubFormRemapOptions<ControlInterface, FormInterface>,
 ): NgxSubForm<FormInterface> {
-  const formGroup: TypedFormGroup<FormInterface> = new FormGroup(
-    options.formControls,
-    options.formGroupOptions as AbstractControlOptions,
-  ) as TypedFormGroup<FormInterface>;
-  const defaultValues: FormInterface = deepCopy(formGroup.value);
-  const formGroupKeys: (keyof FormInterface)[] = Object.keys(defaultValues) as (keyof FormInterface)[];
-  const formControlNames: ControlsNames<FormInterface> = formGroupKeys.reduce<ControlsNames<FormInterface>>(
-    (acc, curr) => {
-      acc[curr] = curr;
-      return acc;
-    },
-    {} as ControlsNames<FormInterface>,
+  const { formGroup, defaultValues, formControlNames } = createFormDataFromOptions<ControlInterface, FormInterface>(
+    options,
   );
 
   // define the `validate` method to improve errors
@@ -49,7 +38,7 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
         return null;
       }
 
-      return getFormGroupErrors(formGroup);
+      return getFormGroupErrors<ControlInterface, FormInterface>(formGroup);
     },
   });
 
@@ -94,7 +83,7 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
   return {
     formGroup,
     formControlNames,
-    formGroupErrors: getFormGroupErrors(formGroup),
+    formGroupErrors: getFormGroupErrors<ControlInterface, FormInterface>(formGroup),
   };
 }
 
