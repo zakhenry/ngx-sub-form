@@ -2,13 +2,11 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
 import {
   Controls,
-  takeUntilDestroyed,
   // NgxAutomaticRootFormComponent,
   // NGX_SUB_FORM_HANDLE_VALUE_CHANGES_RATE_STRATEGIES,
   DataInput,
   NgxRootFormComponent,
 } from 'ngx-sub-form';
-import { tap } from 'rxjs/operators';
 import { ListingType, OneListing } from 'src/app/interfaces/listing.interface';
 import { OneDroid } from '../../../interfaces/droid.interface';
 import { OneVehicle } from '../../../interfaces/vehicle.interface';
@@ -61,6 +59,20 @@ export class ListingFormComponent extends NgxRootFormComponent<OneListing, OneLi
       title: new FormControl(null, Validators.required),
       imageUrl: new FormControl(null, Validators.required),
       price: new FormControl(null, Validators.required),
+    };
+  }
+
+  public getFormGroupControlOptions(): any {
+    return {
+      validators: [
+        (formGroup: any) => {
+          return {
+            tesssst: true,
+          };
+
+          return null;
+        },
+      ],
     };
   }
 

@@ -1,20 +1,16 @@
+import { ɵmarkDirty as markDirty } from '@angular/core';
 import { AbstractControlOptions, FormGroup } from '@angular/forms';
 import { forkJoin, Observable } from 'rxjs';
 import { delay, map, shareReplay, switchMap, tap } from 'rxjs/operators';
-import {
-  Controls,
-  ControlsNames,
-  ControlsType,
-  isNullOrUndefined,
-  takeUntilDestroyed,
-  TypedFormGroup,
-} from '../ngx-sub-form-utils';
+import { Controls, ControlsNames, isNullOrUndefined, takeUntilDestroyed, TypedFormGroup } from '../ngx-sub-form-utils';
 import { FormGroupOptions } from '../ngx-sub-form.types';
 import {
   ControlValueAccessorComponentInstance,
   deepCopy,
   getControlValueAccessorBindings,
+  getFormGroupErrors,
   NgxSubForm,
+  patchClassInstance,
 } from './helpers';
 
 export interface NgxSubFormOptions<FormInterface> {
@@ -45,7 +41,17 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
     {} as ControlsNames<FormInterface>,
   );
 
-  const formControls: ControlsType<FormInterface> = formGroup.controls;
+  // define the `validate` method to improve errors
+  // and support nested errors
+  patchClassInstance(componentInstance, {
+    validate: () => {
+      if (formGroup.valid) {
+        return null;
+      }
+
+      return getFormGroupErrors(formGroup);
+    },
+  });
 
   const { writeValue$, registerOnChange$, registerOnTouched$, setDisabledState$ } = getControlValueAccessorBindings<
     ControlInterface
@@ -65,7 +71,15 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
     broadcastValueToParent$: registerOnChange$.pipe(
       switchMap(onChange => broadcastValueToParent$.pipe(tap(value => onChange(value)))),
     ),
-    applyUpstreamUpdateOnLocalForm$: transformedValue$.pipe(tap(value => formGroup.reset(value))),
+    applyUpstreamUpdateOnLocalForm$: transformedValue$.pipe(
+      tap(value => {
+        formGroup.reset(value);
+
+        // support `changeDetection: ChangeDetectionStrategy.OnPush`
+        // on the component hosting a form
+        markDirty(componentInstance);
+      }),
+    ),
     setDisabledState$: setDisabledState$.pipe(
       tap((shouldDisable: boolean) => {
         shouldDisable ? formGroup.disable() : formGroup.enable();
@@ -77,31 +91,10 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
     .pipe(takeUntilDestroyed(componentInstance))
     .subscribe();
 
-  // @todo
-  // componentInstance.validate = () => {};
-
   return {
     formGroup,
     formControlNames,
-    // get formGroupErrors() {
-    //   let errorsCount: number = 0;
-    //   const formErrors: FormErrors<ControlInterface> = Object.entries<OneOfControlsTypes>(formControls).reduce<
-    //     Exclude<FormErrors<ControlInterface>, null>
-    //   >((acc, [key, value]) => {
-    //     if (value.errors) {
-    //       // @todo remove any
-    //       acc[key as keyof ControlInterface] = value.errors as any;
-    //       errorsCount++;
-    //     }
-    //     return acc;
-    //   }, {});
-
-    //   if (!formGroup.errors && !errorsCount) {
-    //     return null;
-    //   }
-
-    //   return Object.assign({}, formGroup.errors ? { formGroup: formGroup.errors } : {}, formErrors);
-    // },
+    formGroupErrors: getFormGroupErrors(formGroup),
   };
 }
 

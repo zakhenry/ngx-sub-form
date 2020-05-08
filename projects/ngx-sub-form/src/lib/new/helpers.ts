@@ -1,6 +1,6 @@
 import { ControlValueAccessor, Validator } from '@angular/forms';
 import { Observable, ReplaySubject } from 'rxjs';
-import { ControlsNames, TypedFormGroup } from '../ngx-sub-form-utils';
+import { ControlsNames, FormErrors, OneOfControlsTypes, TypedFormGroup } from '../ngx-sub-form-utils';
 
 export const deepCopy = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 export type Nilable<T> = T | null | undefined;
@@ -8,7 +8,7 @@ export type Nilable<T> = T | null | undefined;
 export interface NgxSubForm<FormInterface> {
   readonly formGroup: TypedFormGroup<FormInterface>;
   readonly formControlNames: ControlsNames<FormInterface>;
-  // readonly formGroupErrors: FormErrors<FormInterface>;
+  readonly formGroupErrors: FormErrors<FormInterface>;
 }
 
 export type ControlValueAccessorComponentInstance = Object &
@@ -18,7 +18,7 @@ export type ControlValueAccessorComponentInstance = Object &
   // and this should *never* be overridden by the component
   Partial<Record<keyof ControlValueAccessor, never> & Record<keyof Validator, never>>;
 
-const patchClassInstance = (componentInstance: any, obj: Object) => {
+export const patchClassInstance = (componentInstance: any, obj: Object) => {
   Object.entries(obj).forEach(([key, newMethod]) => {
     componentInstance[key] = newMethod;
   });
@@ -76,3 +76,26 @@ export const getControlValueAccessorBindings = <ControlInterface>(
 //     };
 //   });
 // };
+
+export const getFormGroupErrors = <ControlInterface, FormInterface>(
+  formGroup: TypedFormGroup<FormInterface>,
+): FormErrors<FormInterface> => {
+  let errorsCount: number = 0;
+  const formErrors: FormErrors<ControlInterface> = Object.entries<OneOfControlsTypes>(formGroup.controls).reduce<
+    Exclude<FormErrors<ControlInterface>, null>
+  >((acc, [key, value]) => {
+    if (value.errors) {
+      // @todo remove any
+      acc[key as keyof ControlInterface] = value.errors as any;
+      errorsCount++;
+    }
+    return acc;
+  }, {});
+
+  if (!formGroup.errors && !errorsCount) {
+    return null;
+  }
+
+  // todo remove any
+  return Object.assign<any, any, any>({}, formGroup.errors ? { formGroup: formGroup.errors } : {}, formErrors);
+};

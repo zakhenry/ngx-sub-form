@@ -5,6 +5,7 @@ import {
   FormArray,
   FormControl,
   FormGroup,
+  NG_VALIDATORS,
   NG_VALUE_ACCESSOR,
   ValidationErrors,
 } from '@angular/forms';
@@ -91,11 +92,11 @@ export function subformComponentProviders(
       useExisting: forwardRef(() => component),
       multi: true,
     },
-    // {
-    //   provide: NG_VALIDATORS,
-    //   useExisting: forwardRef(() => component),
-    //   multi: true,
-    // },
+    {
+      provide: NG_VALIDATORS,
+      useExisting: forwardRef(() => component),
+      multi: true,
+    },
     {
       provide: SUB_FORM_COMPONENT_TOKEN,
       useExisting: forwardRef(() => component),

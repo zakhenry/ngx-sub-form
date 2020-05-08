@@ -4,4 +4,16 @@
   <app-test-new-version formControlName="a"></app-test-new-version>
 </form>
 
-<!-- {{ formGroup.value | json }} -->
+<hr />
+
+<br />
+values:
+<br />
+{{ formGroup.value | json }}
+
+<br />
+<br />
+errors:
+<br />
+
+{{ formGroup.get('a')?.errors | json }}
