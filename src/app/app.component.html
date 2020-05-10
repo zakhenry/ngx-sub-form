@@ -1,7 +1,8 @@
 <!-- <app-main></app-main> -->
+condition: {{ condition }}
 
 <form [formGroup]="formGroup">
-  <app-test-new-version formControlName="a"></app-test-new-version>
+  <app-test-new-version *ngIf="condition" formControlName="a"></app-test-new-version>
 </form>
 
 <hr />

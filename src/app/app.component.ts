@@ -11,12 +11,14 @@ export class AppComponent {
     a: new FormControl({ subPropA: ['test'] }),
   });
 
+  public condition = true;
   constructor() {
     this.formGroup.valueChanges.subscribe(x => console.log('[PARENT] form updated:', x));
 
     setTimeout(() => {
+      this.condition = false;
       // console.log('[PARENT] updating form 1');
-      this.formGroup.setValue({ a: { subPropA: ['test', 'ok2'] } }, { emitEvent: false });
+      // this.formGroup.setValue({ a: { subPropA: ['test', 'ok2'] } }, { emitEvent: false });
     }, 2000);
     //
     // setTimeout(() => {

@@ -42,6 +42,13 @@ export class TestNewVersionComponent {
   });
 
   constructor() {
+    // setTimeout(() => {
+    //   (this as any).ngOnDestroy();
+    // }, 1000);
     // this.ngxSubForm.formGroup.get('subPropA')?.controls
   }
+
+  // ngOnDestroy() {
+  //   console.log('HHELO!');
+  // }
 }

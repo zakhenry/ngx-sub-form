@@ -1,24 +1,10 @@
 import { ɵmarkDirty as markDirty } from '@angular/core';
 import { FormControl } from '@angular/forms';
-import { forkJoin, Observable } from 'rxjs';
-import { delay, map, shareReplay, switchMap, tap } from 'rxjs/operators';
-import {
-  ArrayPropertyKey,
-  ArrayPropertyValue,
-  Controls,
-  isNullOrUndefined,
-  takeUntilDestroyed,
-} from '../ngx-sub-form-utils';
+import { EMPTY, forkJoin, Observable } from 'rxjs';
+import { delay, map, mapTo, shareReplay, switchMap, tap } from 'rxjs/operators';
+import { ArrayPropertyKey, ArrayPropertyValue, Controls, isNullOrUndefined, takeUntilDestroyed } from '../ngx-sub-form-utils';
 import { FormGroupOptions } from '../ngx-sub-form.types';
-import {
-  ControlValueAccessorComponentInstance,
-  createFormDataFromOptions,
-  getControlValueAccessorBindings,
-  getFormGroupErrors,
-  handleFArray as handleFormArrays,
-  NgxSubForm,
-  patchClassInstance,
-} from './helpers';
+import { ControlValueAccessorComponentInstance, createFormDataFromOptions, getComponentHooks, getControlValueAccessorBindings, getFormGroupErrors, handleFArray as handleFormArrays, NgxSubForm, patchClassInstance } from './helpers';
 
 export interface NgxSubFormWithArrayOptions<FormInterface> {
   createFormArrayControl?: (
@@ -30,6 +16,7 @@ export interface NgxSubFormWithArrayOptions<FormInterface> {
 export type NgxSubFormOptions<FormInterface> = {
   formControls: Controls<FormInterface>;
   formGroupOptions?: FormGroupOptions<FormInterface>;
+  emitNullOnDestroy?: boolean;
 } & (ArrayPropertyKey<FormInterface> extends never
   ? {} // no point defining `createFormArrayControl` if there's // not a single array in the `FormInterface`
   : NgxSubFormWithArrayOptions<FormInterface>);
@@ -51,6 +38,8 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
     ControlInterface,
     FormInterface
   >(options);
+
+  const { ngOnDestroy$ } = getComponentHooks(componentInstance);
 
   // define the `validate` method to improve errors
   // and support nested errors
@@ -77,6 +66,12 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
     switchMap(() => formGroup.valueChanges.pipe(delay(0))),
     map(value => options.fromFormGroup(value)),
   );
+
+  console.log({ emitNullOnDestroy: isNullOrUndefined(options.emitNullOnDestroy) || options.emitNullOnDestroy });
+
+  const emitNullOnDestroy$: Observable<null> =
+    // emit null when destroyed by default
+    isNullOrUndefined(options.emitNullOnDestroy) || options.emitNullOnDestroy ? ngOnDestroy$.pipe(mapTo(null)) : EMPTY;
 
   const sideEffects = {
     broadcastValueToParent$: registerOnChange$.pipe(
@@ -106,6 +101,17 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
 
   forkJoin(sideEffects)
     .pipe(takeUntilDestroyed(componentInstance))
+    .subscribe();
+
+  // following cannot be part of `forkJoin(sideEffects)`
+  // because it uses `takeUntilDestroyed` which destroys
+  // the subscription when the component is being destroyed
+  // and therefore prevents the emit of the null value if needed
+  registerOnChange$
+    .pipe(
+      switchMap(onChange => emitNullOnDestroy$.pipe(tap(value => onChange(value)))),
+      // takeUntil(ngOnDestroy$.pipe(delay(0))),
+    )
     .subscribe();
 
   return {
