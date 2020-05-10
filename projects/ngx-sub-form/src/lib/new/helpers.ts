@@ -1,7 +1,21 @@
-import { AbstractControlOptions, ControlValueAccessor, FormGroup, Validator } from '@angular/forms';
+import {
+  AbstractControlOptions,
+  ControlValueAccessor,
+  FormArray,
+  FormControl,
+  FormGroup,
+  ValidationErrors,
+  Validator,
+} from '@angular/forms';
 import { Observable, ReplaySubject } from 'rxjs';
-import { ControlsNames, FormErrors, OneOfControlsTypes, TypedFormGroup } from '../ngx-sub-form-utils';
-import { NgxSubFormRemapOptions } from './ngx-sub-form';
+import {
+  ArrayPropertyKey,
+  ControlsNames,
+  NewFormErrors,
+  OneOfControlsTypes,
+  TypedFormGroup,
+} from '../ngx-sub-form-utils';
+import { NgxSubFormRemapOptions, NgxSubFormWithArrayOptions } from './ngx-sub-form';
 
 export const deepCopy = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 export type Nilable<T> = T | null | undefined;
@@ -9,7 +23,7 @@ export type Nilable<T> = T | null | undefined;
 export interface NgxSubForm<FormInterface> {
   readonly formGroup: TypedFormGroup<FormInterface>;
   readonly formControlNames: ControlsNames<FormInterface>;
-  readonly formGroupErrors: FormErrors<FormInterface>;
+  readonly formGroupErrors: NewFormErrors<FormInterface>;
 }
 
 export type ControlValueAccessorComponentInstance = Object &
@@ -80,26 +94,50 @@ export const getControlValueAccessorBindings = <ControlInterface>(
 
 export const getFormGroupErrors = <ControlInterface, FormInterface>(
   formGroup: TypedFormGroup<FormInterface>,
-): FormErrors<FormInterface> => {
-  let errorsCount: number = 0;
-  const formErrors: FormErrors<ControlInterface> = Object.entries<OneOfControlsTypes>(formGroup.controls).reduce<
-    Exclude<FormErrors<ControlInterface>, null>
-  >((acc, [key, value]) => {
-    if (value.errors) {
-      // @todo remove any
-      acc[key as keyof ControlInterface] = value.errors as any;
-      errorsCount++;
+): NewFormErrors<FormInterface> => {
+  const formErrors: NewFormErrors<ControlInterface> = Object.entries<OneOfControlsTypes>(formGroup.controls).reduce<
+    Exclude<NewFormErrors<ControlInterface>, null>
+  >((acc, [key, control]) => {
+    if (control instanceof FormArray) {
+      // errors within an array are represented as a map
+      // with the index and the error
+      // this way, we avoid holding a lot of potential `null`
+      // values in the array for the valid form controls
+      const errorsInArray: Record<number, ValidationErrors> = {};
+
+      for (let i = 0; i < control.length; i++) {
+        const controlErrors = control.at(i).errors;
+        if (controlErrors) {
+          errorsInArray[i] = controlErrors;
+        }
+      }
+
+      if (Object.values(errorsInArray).length > 0) {
+        const accHoldingArrays = acc as Record<keyof ControlInterface, Record<number, ValidationErrors>>;
+        accHoldingArrays[key as keyof ControlInterface] = errorsInArray;
+      }
+    } else {
+      if (control.errors) {
+        const accHoldingNonArrays = acc as Record<keyof ControlInterface, ValidationErrors>;
+        accHoldingNonArrays[key as keyof ControlInterface] = control.errors;
+      }
     }
+
     return acc;
   }, {});
 
-  if (!formGroup.errors && !errorsCount) {
+  if (!formGroup.errors && !Object.values(formErrors).length) {
     return null;
   }
 
   // todo remove any
   return Object.assign<any, any, any>({}, formGroup.errors ? { formGroup: formGroup.errors } : {}, formErrors);
 };
+
+export interface FormArrayWrapper<FormInterface> {
+  key: keyof FormInterface;
+  control: FormArray;
+}
 
 export function createFormDataFromOptions<ControlInterface, FormInterface>(
   options: NgxSubFormRemapOptions<ControlInterface, FormInterface>,
@@ -117,5 +155,50 @@ export function createFormDataFromOptions<ControlInterface, FormInterface>(
     },
     {} as ControlsNames<FormInterface>,
   );
-  return { formGroup, defaultValues, formControlNames };
+
+  const formArrays: FormArrayWrapper<FormInterface>[] = formGroupKeys.reduce<FormArrayWrapper<FormInterface>[]>(
+    (acc, key) => {
+      const control = formGroup.get(key as string);
+      if (control instanceof FormArray) {
+        acc.push({ key, control });
+      }
+      return acc;
+    },
+    [],
+  );
+  return { formGroup, defaultValues, formControlNames, formArrays };
 }
+
+export const handleFArray = <FormInterface>(
+  formArrayWrappers: FormArrayWrapper<FormInterface>[],
+  obj: FormInterface,
+  createFormArrayControl: NgxSubFormWithArrayOptions<FormInterface>['createFormArrayControl'] | null,
+) => {
+  if (!formArrayWrappers.length) {
+    return;
+  }
+
+  formArrayWrappers.forEach(({ key, control }) => {
+    const value = obj[key];
+
+    if (!Array.isArray(value)) {
+      return;
+    }
+
+    // instead of creating a new array every time and push a new FormControl
+    // we just remove or add what is necessary so that:
+    // - it is as efficient as possible and do not create unnecessary FormControl every time
+    // - validators are not destroyed/created again and eventually fire again for no reason
+    while (control.length > value.length) {
+      control.removeAt(control.length - 1);
+    }
+
+    for (let i = control.length; i < value.length; i++) {
+      if (createFormArrayControl) {
+        control.insert(i, createFormArrayControl(key as ArrayPropertyKey<FormInterface>, value[i]));
+      } else {
+        control.insert(i, new FormControl(value[i]));
+      }
+    }
+  });
+};

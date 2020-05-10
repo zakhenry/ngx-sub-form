@@ -8,7 +8,7 @@ import { FormControl, FormGroup } from '@angular/forms';
 })
 export class AppComponent {
   public formGroup: FormGroup = new FormGroup({
-    a: new FormControl({ subPropA: 'test' }),
+    a: new FormControl({ subPropA: ['test'] }),
   });
 
   constructor() {
@@ -16,9 +16,9 @@ export class AppComponent {
 
     setTimeout(() => {
       // console.log('[PARENT] updating form 1');
-      this.formGroup.setValue({ a: { subPropA: 'hello' } }, { emitEvent: false });
+      this.formGroup.setValue({ a: { subPropA: ['test', 'ok2'] } }, { emitEvent: false });
     }, 2000);
-
+    //
     // setTimeout(() => {
     //   console.log('[PARENT] updating form 2');
     //   this.formGroup.setValue({ a: 'hello 2' });

@@ -26,14 +26,28 @@ export type ControlsType<T> = {
 
 export type OneOfControlsTypes<T = any> = ControlsType<T>[keyof ControlsType<T>];
 
+// @deprecated
 export type FormErrorsType<T> = {
   [K in keyof T]-?: T[K] extends any[] ? (null | ValidationErrors)[] : ValidationErrors;
 };
 
 export type FormUpdate<FormInterface> = { [FormControlInterface in keyof FormInterface]?: true };
 
+// @deprecated
 export type FormErrors<FormInterface> = null | Partial<
   FormErrorsType<FormInterface> & {
+    formGroup?: ValidationErrors;
+  }
+>;
+
+// @todo rename to `FormErrorsType` once the deprecated one is removed
+export type NewFormErrorsType<T> = {
+  [K in keyof T]-?: T[K] extends any[] ? Record<number, ValidationErrors> : ValidationErrors;
+};
+
+// @todo rename to `FormErrors` once the deprecated one is removed
+export type NewFormErrors<FormInterface> = null | Partial<
+  NewFormErrorsType<FormInterface> & {
     formGroup?: ValidationErrors;
   }
 >;

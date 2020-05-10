@@ -1,34 +1,56 @@
 import { ɵmarkDirty as markDirty } from '@angular/core';
+import { FormControl } from '@angular/forms';
 import { forkJoin, Observable } from 'rxjs';
 import { delay, map, shareReplay, switchMap, tap } from 'rxjs/operators';
-import { Controls, isNullOrUndefined, takeUntilDestroyed } from '../ngx-sub-form-utils';
+import {
+  ArrayPropertyKey,
+  ArrayPropertyValue,
+  Controls,
+  isNullOrUndefined,
+  takeUntilDestroyed,
+} from '../ngx-sub-form-utils';
 import { FormGroupOptions } from '../ngx-sub-form.types';
 import {
   ControlValueAccessorComponentInstance,
   createFormDataFromOptions,
   getControlValueAccessorBindings,
   getFormGroupErrors,
+  handleFArray as handleFormArrays,
   NgxSubForm,
   patchClassInstance,
 } from './helpers';
 
-export interface NgxSubFormOptions<FormInterface> {
-  formControls: Controls<FormInterface>;
-  formGroupOptions?: FormGroupOptions<FormInterface>;
+export interface NgxSubFormWithArrayOptions<FormInterface> {
+  createFormArrayControl?: (
+    key: ArrayPropertyKey<FormInterface>,
+    value: ArrayPropertyValue<FormInterface>,
+  ) => FormControl;
 }
 
-export interface NgxSubFormRemapOptions<ControlInterface, FormInterface> extends NgxSubFormOptions<FormInterface> {
+export type NgxSubFormOptions<FormInterface> = {
+  formControls: Controls<FormInterface>;
+  formGroupOptions?: FormGroupOptions<FormInterface>;
+} & (ArrayPropertyKey<FormInterface> extends never
+  ? {} // no point defining `createFormArrayControl` if there's // not a single array in the `FormInterface`
+  : NgxSubFormWithArrayOptions<FormInterface>);
+
+const optionsHasInstructionsToCreateArrays = <ControlInterface, FormInterface>(
+  a: NgxSubFormRemapOptions<ControlInterface, FormInterface>,
+): a is NgxSubFormRemapOptions<ControlInterface, FormInterface> & NgxSubFormWithArrayOptions<FormInterface> => true;
+
+export type NgxSubFormRemapOptions<ControlInterface, FormInterface> = NgxSubFormOptions<FormInterface> & {
   toFormGroup: (obj: ControlInterface) => FormInterface;
   fromFormGroup: (formValue: FormInterface) => ControlInterface;
-}
+};
 
 export function createRemapSubForm<ControlInterface, FormInterface>(
   componentInstance: ControlValueAccessorComponentInstance,
   options: NgxSubFormRemapOptions<ControlInterface, FormInterface>,
 ): NgxSubForm<FormInterface> {
-  const { formGroup, defaultValues, formControlNames } = createFormDataFromOptions<ControlInterface, FormInterface>(
-    options,
-  );
+  const { formGroup, defaultValues, formControlNames, formArrays } = createFormDataFromOptions<
+    ControlInterface,
+    FormInterface
+  >(options);
 
   // define the `validate` method to improve errors
   // and support nested errors
@@ -62,6 +84,12 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
     ),
     applyUpstreamUpdateOnLocalForm$: transformedValue$.pipe(
       tap(value => {
+        handleFormArrays<FormInterface>(
+          formArrays,
+          value,
+          optionsHasInstructionsToCreateArrays(options) ? options.createFormArrayControl : null,
+        );
+
         formGroup.reset(value);
 
         // support `changeDetection: ChangeDetectionStrategy.OnPush`
@@ -83,7 +111,9 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
   return {
     formGroup,
     formControlNames,
-    formGroupErrors: getFormGroupErrors<ControlInterface, FormInterface>(formGroup),
+    get formGroupErrors() {
+      return getFormGroupErrors<ControlInterface, FormInterface>(formGroup);
+    },
   };
 }
 
