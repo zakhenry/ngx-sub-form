@@ -41,7 +41,7 @@ export const patchClassInstance = (componentInstance: any, obj: Object) => {
 
 export interface FormBindings<ControlInterface> {
   readonly writeValue$: Observable<Nilable<ControlInterface>>;
-  readonly registerOnChange$: Observable<(formValue: ControlInterface) => void>;
+  readonly registerOnChange$: Observable<(formValue: ControlInterface | null) => void>;
   readonly registerOnTouched$: Observable<(_: any) => void>;
   readonly setDisabledState$: Observable<boolean>;
 }
@@ -50,7 +50,7 @@ export const getControlValueAccessorBindings = <ControlInterface>(
   componentInstance: ControlValueAccessorComponentInstance,
 ): FormBindings<ControlInterface> => {
   const writeValue$$: ReplaySubject<Nilable<ControlInterface>> = new ReplaySubject(1);
-  const registerOnChange$$: ReplaySubject<(formValue: ControlInterface) => void> = new ReplaySubject(1);
+  const registerOnChange$$: ReplaySubject<(formValue: ControlInterface | null) => void> = new ReplaySubject(1);
   const registerOnTouched$$: ReplaySubject<(_: any) => void> = new ReplaySubject(1);
   const setDisabledState$$: ReplaySubject<boolean> = new ReplaySubject(1);
 
@@ -58,7 +58,7 @@ export const getControlValueAccessorBindings = <ControlInterface>(
     writeValue: (obj: Nilable<any>): void => {
       writeValue$$.next(obj);
     },
-    registerOnChange: (fn: (formValue: ControlInterface) => void): void => {
+    registerOnChange: (fn: (formValue: ControlInterface | null) => void): void => {
       registerOnChange$$.next(fn);
     },
     registerOnTouched: (fn: () => void): void => {

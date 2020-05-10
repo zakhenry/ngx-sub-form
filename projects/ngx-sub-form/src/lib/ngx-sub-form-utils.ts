@@ -141,11 +141,15 @@ export const NGX_SUB_FORM_HANDLE_VALUE_CHANGES_RATE_STRATEGIES = {
  * Note that the component *must* implement OnDestroy for this to work (the typings will enforce this anyway)
  */
 export function takeUntilDestroyed<T>(component: any): (source: Observable<T>) => Observable<T> {
+  console.log('AAAAAA');
+
   return (source: Observable<T>): Observable<T> => {
     const onDestroy = new Subject();
     const previousOnDestroy = component.ngOnDestroy;
 
-    component.ngOnDestroy = () => {
+    component.prototype.ngOnDestroy = () => {
+      console.log('DESTROYING', component.contructor.name);
+
       if (previousOnDestroy) {
         previousOnDestroy.apply(component);
       }
