@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy } from '@angular/core';
 import { FormArray, FormControl, Validators } from '@angular/forms';
+import { Subject } from 'rxjs';
 import { createSubForm } from '../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form';
 import { subformComponentProviders } from '../../../projects/ngx-sub-form/src/lib/ngx-sub-form-utils';
 
@@ -14,7 +15,9 @@ interface Sub {
   providers: subformComponentProviders(TestNewVersionComponent),
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TestNewVersionComponent {
+export class TestNewVersionComponent implements OnDestroy {
+  private onDestroy$: Subject<void> = new Subject();
+
   ngxSubForm = createSubForm<Sub>(this, {
     formControls: {
       subPropA: new FormArray([], Validators.required),
@@ -25,6 +28,9 @@ export class TestNewVersionComponent {
       }
 
       return new FormControl();
+    },
+    componentHooks: {
+      ngOnDestroy$: this.onDestroy$.asObservable(),
     },
     // formGroupOptions: {
     //   validators: [
@@ -40,6 +46,11 @@ export class TestNewVersionComponent {
     //   ],
     // },
   });
+
+  ngOnDestroy(): void {
+    this.onDestroy$.next();
+    this.onDestroy$.complete();
+  }
 
   constructor() {
     // setTimeout(() => {
