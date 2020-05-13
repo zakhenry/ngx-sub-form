@@ -1,6 +1,6 @@
 import { ɵmarkDirty as markDirty } from '@angular/core';
-import { EMPTY, forkJoin, Observable } from 'rxjs';
-import { delay, map, mapTo, shareReplay, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { EMPTY, forkJoin, Observable, of } from 'rxjs';
+import { delay, filter, map, mapTo, shareReplay, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { isNullOrUndefined } from '../ngx-sub-form-utils';
 import {
   createFormDataFromOptions,
@@ -75,7 +75,6 @@ export function createForm<ControlInterface, FormInterface>(
     },
   });
 
-  // const { writeValue$, registerOnChange$, registerOnTouched$, setDisabledState$ } = getControlValueAccessorBindings<
   const componentHooks = getControlValueAccessorBindings<ControlInterface>(componentInstance);
 
   const writeValue$: FormBindings<ControlInterface>['writeValue$'] = isRoot<ControlInterface, FormInterface>(options)
@@ -86,8 +85,12 @@ export function createForm<ControlInterface, FormInterface>(
     ControlInterface,
     FormInterface
   >(options)
-    ? // @todo
-      (null as any)
+    ? of(data => {
+        if (!data) {
+          return;
+        }
+        options.output$.next(data);
+      })
     : componentHooks.registerOnChange$;
 
   const setDisabledState$: FormBindings<ControlInterface>['setDisabledState$'] = isRoot<
@@ -115,6 +118,7 @@ export function createForm<ControlInterface, FormInterface>(
 
   const broadcastValueToParent$: Observable<ControlInterface> = transformedValue$.pipe(
     switchMap(() => formGroup.valueChanges.pipe(delay(0))),
+    filter(() => !isRoot<ControlInterface, FormInterface>(options) || formGroup.valid),
     map(value =>
       isRemap<ControlInterface, FormInterface>(options)
         ? options.fromFormGroup(value)

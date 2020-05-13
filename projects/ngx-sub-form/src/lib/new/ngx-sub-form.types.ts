@@ -74,7 +74,7 @@ export type NgxRootFormOptions<ControlInterface, FormInterface = ControlInterfac
   FormInterface
 > & {
   disabled$: Observable<boolean>;
-  input$: Observable<ControlInterface>;
+  input$: Observable<ControlInterface | undefined>;
   output$: Subject<ControlInterface>;
 };
 

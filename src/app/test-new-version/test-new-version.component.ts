@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnDestroy } from '@angular/core';
-import { FormArray, FormControl, Validators } from '@angular/forms';
+import { FormArray, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { createForm } from '../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form';
 import { FormType } from '../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form.types';
@@ -23,39 +23,40 @@ interface Sub2 {
 export class TestNewVersionComponent implements OnDestroy {
   private onDestroy$: Subject<void> = new Subject();
 
-  ngxSubForm = createForm<Sub, Sub2>(this, {
-    formType: FormType.ROOT,
-    disabled$: null as any,
-    input$: null as any,
-    output$: null as any,
+  ngxSubForm = createForm<Sub>(this, {
+    // formType: FormType.ROOT,
+    // disabled$: null as any,
+    // input$: null as any,
+    // output$: null as any,
+    formType: FormType.SUB,
     formControls: {
-      subPropB: new FormArray([], Validators.required),
+      subPropA: new FormArray([], Validators.required),
     },
-    createFormArrayControl: (key, value) => {
-      if (key === 'subPropB') {
-        return new FormControl(value, [Validators.required]);
-      }
+    // createFormArrayControl: (key, value) => {
+    //   if (key === 'subPropB') {
+    //     return new FormControl(value, [Validators.required]);
+    //   }
 
-      return new FormControl();
-    },
-    toFormGroup: obj => ({ subPropB: obj.subPropA }),
-    fromFormGroup: formValue => ({ subPropA: formValue.subPropB }),
+    //   return new FormControl();
+    // },
+    // toFormGroup: obj => ({ subPropB: obj.subPropA }),
+    // fromFormGroup: formValue => ({ subPropA: formValue.subPropB }),
     componentHooks: {
       ngOnDestroy$: this.onDestroy$.asObservable(),
     },
-    formGroupOptions: {
-      validators: [
-        formGroup => {
-          if (formGroup.value.subPropB.length) {
-            return {
-              subPropANotWow: true,
-            };
-          }
+    // formGroupOptions: {
+    //   validators: [
+    //     formGroup => {
+    //       if (formGroup.value.subPropB.length) {
+    //         return {
+    //           subPropANotWow: true,
+    //         };
+    //       }
 
-          return null;
-        },
-      ],
-    },
+    //       return null;
+    //     },
+    //   ],
+    // },
   });
 
   ngOnDestroy(): void {

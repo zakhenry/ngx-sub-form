@@ -1,5 +1,7 @@
 import { Component } from '@angular/core';
-import { FormControl, FormGroup } from '@angular/forms';
+import { concat, Observable, of } from 'rxjs';
+import { delay } from 'rxjs/operators';
+import { RootF } from './root-f/root-f.component';
 
 @Component({
   selector: 'app-root',
@@ -7,23 +9,16 @@ import { FormControl, FormGroup } from '@angular/forms';
   styleUrls: ['./app.component.scss'],
 })
 export class AppComponent {
-  public formGroup: FormGroup = new FormGroup({
-    a: new FormControl({ subPropA: ['test'] }),
-  });
-
-  public condition = true;
-  constructor() {
-    this.formGroup.valueChanges.subscribe(x => console.log('[PARENT] form updated:', x));
-
-    setTimeout(() => {
-      this.condition = false;
-      // console.log('[PARENT] updating form 1');
-      // this.formGroup.setValue({ a: { subPropA: ['test', 'ok2'] } }, { emitEvent: false });
-    }, 2000);
-    //
-    // setTimeout(() => {
-    //   console.log('[PARENT] updating form 2');
-    //   this.formGroup.setValue({ a: 'hello 2' });
-    // }, 4000);
-  }
+  public value$: Observable<RootF> = concat(
+    of({
+      a: {
+        subPropA: ['test!'],
+      },
+    }),
+    of({
+      a: {
+        subPropA: ['test!', 'wow'],
+      },
+    }).pipe(delay(2000)),
+  );
 }

@@ -1,5 +1,8 @@
 <!-- <app-main></app-main> -->
-condition: {{ condition }}
+
+<app-root-f [value]="value$ | async"></app-root-f>
+
+<!-- condition: {{ condition }}
 
 <form [formGroup]="formGroup">
   <app-test-new-version *ngIf="condition" formControlName="a"></app-test-new-version>
@@ -17,4 +20,4 @@ values:
 errors:
 <br />
 
-{{ formGroup.get('a')?.errors | json }}
+{{ formGroup.get('a')?.errors | json }} -->
