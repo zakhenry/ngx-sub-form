@@ -23,7 +23,11 @@ interface Sub2 {
 export class TestNewVersionComponent implements OnDestroy {
   private onDestroy$: Subject<void> = new Subject();
 
-  ngxSubForm = createForm<Sub, Sub2>(this, FormType.SUB, {
+  ngxSubForm = createForm<Sub, Sub2>(this, {
+    formType: FormType.ROOT,
+    disabled$: null as any,
+    input$: null as any,
+    output$: null as any,
     formControls: {
       subPropB: new FormArray([], Validators.required),
     },

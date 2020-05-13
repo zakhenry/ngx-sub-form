@@ -22,10 +22,11 @@ import {
   NgxSubFormRemapOptions,
 } from './ngx-sub-form.types';
 
-const optionsHasInstructionsToCreateArrays = <ControlInterface, FormInterface>(
-  a: NgxSubFormOptions<ControlInterface, FormInterface>,
-): a is NgxSubFormOptions<ControlInterface, FormInterface> & NgxSubFormArrayOptions<FormInterface> => true;
+const optionsHaveInstructionsToCreateArrays = <ControlInterface, FormInterface>(
+  options: NgxSubFormOptions<ControlInterface, FormInterface>,
+): options is NgxSubFormOptions<ControlInterface, FormInterface> & NgxSubFormArrayOptions<FormInterface> => true;
 
+// @todo find a better name
 const isRemap = <ControlInterface, FormInterface>(
   options: any,
 ): options is NgxSubFormRemapOptions<ControlInterface, FormInterface> => {
@@ -33,32 +34,26 @@ const isRemap = <ControlInterface, FormInterface>(
   return !!opt.fromFormGroup && !!opt.toFormGroup;
 };
 
+// @todo find a better name
+const isRoot = <ControlInterface, FormInterface>(
+  options: any,
+): options is NgxRootFormOptions<ControlInterface, FormInterface> => {
+  const opt = options as NgxRootFormOptions<ControlInterface, FormInterface>;
+  return opt.formType === FormType.ROOT;
+};
+
 export function createForm<ControlInterface, FormInterface = ControlInterface>(
   componentInstance: ControlValueAccessorComponentInstance,
-  formType: FormType.ROOT,
   options: NgxRootFormOptions<ControlInterface, FormInterface>,
 ): NgxRootForm<FormInterface>;
 export function createForm<ControlInterface, FormInterface = ControlInterface>(
   componentInstance: ControlValueAccessorComponentInstance,
-  formType: FormType.SUB,
   options: NgxSubFormOptions<ControlInterface, FormInterface>,
 ): NgxSubForm<FormInterface>;
 export function createForm<ControlInterface, FormInterface>(
   componentInstance: ControlValueAccessorComponentInstance,
-  formType: FormType,
   options: NgxFormOptions<ControlInterface, FormInterface>,
 ): NgxSubForm<FormInterface> {
-  const mergedOptions: NgxFormOptions<ControlInterface, FormInterface> = {
-    // the following 2 `as any` are required as for example with the `fromFormGroup`
-    // we expect `FormInterface --> ControlInterface` but when doing `fromFormGroup: v => v`
-    // the type is `FormInterface --> FormInterface` and we'd get an error (hence the cast)
-    // in the first place, we need to provide those 2 functions as if we're not into a remap
-    // form we need to declare those 2 functions (to return the same value only)
-    fromFormGroup: v => v,
-    toFormGroup: v => v,
-    ...options,
-  };
-
   const { formGroup, defaultValues, formControlNames, formArrays } = createFormDataFromOptions<
     ControlInterface,
     FormInterface
@@ -83,21 +78,24 @@ export function createForm<ControlInterface, FormInterface>(
   // const { writeValue$, registerOnChange$, registerOnTouched$, setDisabledState$ } = getControlValueAccessorBindings<
   const componentHooks = getControlValueAccessorBindings<ControlInterface>(componentInstance);
 
-  const writeValue$: FormBindings<ControlInterface>['writeValue$'] =
-    formType === FormType.SUB
-      ? componentHooks.writeValue$
-      : (options as NgxRootFormOptions<ControlInterface, FormInterface>).input$;
+  const writeValue$: FormBindings<ControlInterface>['writeValue$'] = isRoot<ControlInterface, FormInterface>(options)
+    ? options.input$
+    : componentHooks.writeValue$;
 
-  const registerOnChange$: FormBindings<ControlInterface>['registerOnChange$'] =
-    formType === FormType.SUB
-      ? componentHooks.registerOnChange$
-      : // @todo
-        (null as any);
+  const registerOnChange$: FormBindings<ControlInterface>['registerOnChange$'] = isRoot<
+    ControlInterface,
+    FormInterface
+  >(options)
+    ? // @todo
+      (null as any)
+    : componentHooks.registerOnChange$;
 
-  const setDisabledState$: FormBindings<ControlInterface>['setDisabledState$'] =
-    formType === FormType.SUB
-      ? componentHooks.setDisabledState$
-      : (options as NgxRootFormOptions<ControlInterface, FormInterface>).disabled$;
+  const setDisabledState$: FormBindings<ControlInterface>['setDisabledState$'] = isRoot<
+    ControlInterface,
+    FormInterface
+  >(options)
+    ? options.disabled$
+    : componentHooks.setDisabledState$;
 
   const transformedValue$: Observable<FormInterface> = writeValue$.pipe(
     map(value => {
@@ -127,9 +125,9 @@ export function createForm<ControlInterface, FormInterface>(
 
   const emitNullOnDestroy$: Observable<null> =
     // emit null when destroyed by default
-    isNullOrUndefined(mergedOptions.emitNullOnDestroy) || mergedOptions.emitNullOnDestroy
+    isNullOrUndefined(options.emitNullOnDestroy) || options.emitNullOnDestroy
       ? // ngOnDestroy$.pipe(mapTo(null))
-        mergedOptions.componentHooks.ngOnDestroy$.pipe(mapTo(null))
+        options.componentHooks.ngOnDestroy$.pipe(mapTo(null))
       : EMPTY;
 
   const sideEffects = {
@@ -141,7 +139,7 @@ export function createForm<ControlInterface, FormInterface>(
         handleFormArrays<FormInterface>(
           formArrays,
           value,
-          optionsHasInstructionsToCreateArrays<ControlInterface, FormInterface>(options)
+          optionsHaveInstructionsToCreateArrays<ControlInterface, FormInterface>(options)
             ? options.createFormArrayControl
             : null,
         );
@@ -161,7 +159,7 @@ export function createForm<ControlInterface, FormInterface>(
   };
 
   forkJoin(sideEffects)
-    .pipe(takeUntil(mergedOptions.componentHooks.ngOnDestroy$))
+    .pipe(takeUntil(options.componentHooks.ngOnDestroy$))
     .subscribe();
 
   // following cannot be part of `forkJoin(sideEffects)`
@@ -171,7 +169,7 @@ export function createForm<ControlInterface, FormInterface>(
   registerOnChange$
     .pipe(
       switchMap(onChange => emitNullOnDestroy$.pipe(tap(value => onChange(value)))),
-      takeUntil(mergedOptions.componentHooks.ngOnDestroy$.pipe(delay(0))),
+      takeUntil(options.componentHooks.ngOnDestroy$.pipe(delay(0))),
       // takeUntil(ngOnDestroy$.pipe(delay(0))),
     )
     .subscribe();
