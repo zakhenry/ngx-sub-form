@@ -1,78 +1,68 @@
 import { ɵmarkDirty as markDirty } from '@angular/core';
-import { FormControl } from '@angular/forms';
 import { EMPTY, forkJoin, Observable } from 'rxjs';
 import { delay, map, mapTo, shareReplay, switchMap, takeUntil, tap } from 'rxjs/operators';
-import { ArrayPropertyKey, ArrayPropertyValue, Controls, isNullOrUndefined } from '../ngx-sub-form-utils';
-import { FormGroupOptions } from '../ngx-sub-form.types';
+import { isNullOrUndefined } from '../ngx-sub-form-utils';
 import {
-  ComponentHooks,
-  ControlValueAccessorComponentInstance,
   createFormDataFromOptions,
   getControlValueAccessorBindings,
   getFormGroupErrors,
   handleFArray as handleFormArrays,
-  NgxSubForm,
   patchClassInstance,
 } from './helpers';
-
-export interface NgxSubFormWithArrayOptions<FormInterface> {
-  createFormArrayControl?: (
-    key: ArrayPropertyKey<FormInterface>,
-    value: ArrayPropertyValue<FormInterface>,
-  ) => FormControl;
-}
-
-export type NgxSubFormOptions<ControlInterface> = {
-  formControls: Controls<ControlInterface>;
-  formGroupOptions?: FormGroupOptions<ControlInterface>;
-  emitNullOnDestroy?: boolean;
-  componentHooks: ComponentHooks;
-} & (ArrayPropertyKey<ControlInterface> extends never
-  ? {} // no point defining `createFormArrayControl` if there's // not a single array in the `ControlInterface`
-  : NgxSubFormWithArrayOptions<ControlInterface>);
+import {
+  ControlValueAccessorComponentInstance,
+  FormBindings,
+  FormType,
+  NgxFormOptions,
+  NgxRootForm,
+  NgxRootFormOptions,
+  NgxSubForm,
+  NgxSubFormArrayOptions,
+  NgxSubFormOptions,
+  NgxSubFormRemapOptions,
+} from './ngx-sub-form.types';
 
 const optionsHasInstructionsToCreateArrays = <ControlInterface, FormInterface>(
-  a: NgxSubFormRemapOptions<ControlInterface, FormInterface>,
-): a is NgxSubFormRemapOptions<ControlInterface, FormInterface> & NgxSubFormWithArrayOptions<FormInterface> => true;
+  a: NgxSubFormOptions<ControlInterface, FormInterface>,
+): a is NgxSubFormOptions<ControlInterface, FormInterface> & NgxSubFormArrayOptions<FormInterface> => true;
 
-export type NgxSubFormRemapOptions<ControlInterface, FormInterface> = NgxSubFormOptions<FormInterface> & {
-  toFormGroup: (obj: ControlInterface) => FormInterface;
-  fromFormGroup: (formValue: FormInterface) => ControlInterface;
+const isRemap = <ControlInterface, FormInterface>(
+  options: any,
+): options is NgxSubFormRemapOptions<ControlInterface, FormInterface> => {
+  const opt = options as NgxSubFormRemapOptions<ControlInterface, FormInterface>;
+  return !!opt.fromFormGroup && !!opt.toFormGroup;
 };
 
-// not needed anymore
-// const isRemap = <ControlInterface, FormInterface>(
-//   options: any,
-// ): options is NgxSubFormRemapOptions<ControlInterface, FormInterface> => {
-//   return true;
-// };
-
-export function createSubForm<ControlInterface, FormInterface>(
+export function createForm<ControlInterface, FormInterface = ControlInterface>(
   componentInstance: ControlValueAccessorComponentInstance,
-  options: NgxSubFormRemapOptions<ControlInterface, FormInterface>,
+  formType: FormType.ROOT,
+  options: NgxRootFormOptions<ControlInterface, FormInterface>,
+): NgxRootForm<FormInterface>;
+export function createForm<ControlInterface, FormInterface = ControlInterface>(
+  componentInstance: ControlValueAccessorComponentInstance,
+  formType: FormType.SUB,
+  options: NgxSubFormOptions<ControlInterface, FormInterface>,
 ): NgxSubForm<FormInterface>;
-export function createSubForm<ControlInterface>(
+export function createForm<ControlInterface, FormInterface = ControlInterface>(
   componentInstance: ControlValueAccessorComponentInstance,
-  options: NgxSubFormOptions<ControlInterface>,
-): NgxSubForm<ControlInterface>;
-export function createSubForm<ControlInterface, FormInterface = ControlInterface>(
-  componentInstance: ControlValueAccessorComponentInstance,
-  options: NgxSubFormOptions<FormInterface> | NgxSubFormRemapOptions<ControlInterface, FormInterface>,
+  formType: FormType,
+  options: NgxFormOptions<ControlInterface, FormInterface>,
 ): NgxSubForm<FormInterface> {
-  const mergedOptions: NgxSubFormRemapOptions<ControlInterface, FormInterface> = {
+  const mergedOptions: NgxFormOptions<ControlInterface, FormInterface> = {
     // the following 2 `as any` are required as for example with the `fromFormGroup`
     // we expect `FormInterface --> ControlInterface` but when doing `fromFormGroup: v => v`
     // the type is `FormInterface --> FormInterface` and we'd get an error (hence the cast)
     // in the first place, we need to provide those 2 functions as if we're not into a remap
     // form we need to declare those 2 functions (to return the same value only)
-    fromFormGroup: v => (v as any) as ControlInterface,
-    toFormGroup: v => (v as any) as FormInterface,
+    fromFormGroup: v => v,
+    toFormGroup: v => v,
     ...options,
   };
 
-  const { formGroup, defaultValues, formControlNames, formArrays } = createFormDataFromOptions<FormInterface>(
-    mergedOptions,
-  );
+  const { formGroup, defaultValues, formControlNames, formArrays } = createFormDataFromOptions<
+    ControlInterface,
+    FormInterface
+  >(options);
 
   // this doesn't work for now see issue on the function
   // as a hack I'm asking to get within options an observable for some hooks...
@@ -90,18 +80,49 @@ export function createSubForm<ControlInterface, FormInterface = ControlInterface
     },
   });
 
-  const { writeValue$, registerOnChange$, registerOnTouched$, setDisabledState$ } = getControlValueAccessorBindings<
-    ControlInterface
-  >(componentInstance);
+  // const { writeValue$, registerOnChange$, registerOnTouched$, setDisabledState$ } = getControlValueAccessorBindings<
+  const componentHooks = getControlValueAccessorBindings<ControlInterface>(componentInstance);
+
+  const writeValue$: FormBindings<ControlInterface>['writeValue$'] =
+    formType === FormType.SUB
+      ? componentHooks.writeValue$
+      : (options as NgxRootFormOptions<ControlInterface, FormInterface>).input$;
+
+  const registerOnChange$: FormBindings<ControlInterface>['registerOnChange$'] =
+    formType === FormType.SUB
+      ? componentHooks.registerOnChange$
+      : // @todo
+        (null as any);
+
+  const setDisabledState$: FormBindings<ControlInterface>['setDisabledState$'] =
+    formType === FormType.SUB
+      ? componentHooks.setDisabledState$
+      : (options as NgxRootFormOptions<ControlInterface, FormInterface>).disabled$;
 
   const transformedValue$: Observable<FormInterface> = writeValue$.pipe(
-    map(value => (isNullOrUndefined(value) ? defaultValues : mergedOptions.toFormGroup(value))),
+    map(value => {
+      if (isNullOrUndefined(value)) {
+        return defaultValues;
+      }
+
+      if (isRemap<ControlInterface, FormInterface>(options)) {
+        return options.toFormGroup(value);
+      }
+
+      // if it's not a remap component, the ControlInterface === the FormInterface
+      return (value as any) as FormInterface;
+    }),
     shareReplay({ refCount: true, bufferSize: 1 }),
   );
 
   const broadcastValueToParent$: Observable<ControlInterface> = transformedValue$.pipe(
     switchMap(() => formGroup.valueChanges.pipe(delay(0))),
-    map(value => mergedOptions.fromFormGroup(value)),
+    map(value =>
+      isRemap<ControlInterface, FormInterface>(options)
+        ? options.fromFormGroup(value)
+        : // if it's not a remap component, the ControlInterface === the FormInterface
+          ((value as any) as ControlInterface),
+    ),
   );
 
   const emitNullOnDestroy$: Observable<null> =
@@ -120,7 +141,9 @@ export function createSubForm<ControlInterface, FormInterface = ControlInterface
         handleFormArrays<FormInterface>(
           formArrays,
           value,
-          optionsHasInstructionsToCreateArrays(mergedOptions) ? mergedOptions.createFormArrayControl : null,
+          optionsHasInstructionsToCreateArrays<ControlInterface, FormInterface>(options)
+            ? options.createFormArrayControl
+            : null,
         );
 
         formGroup.reset(value);

@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, OnDestroy } from '@angular/core';
 import { FormArray, FormControl, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
-import { createSubForm } from '../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form';
+import { createForm } from '../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form';
+import { FormType } from '../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form.types';
 import { subformComponentProviders } from '../../../projects/ngx-sub-form/src/lib/ngx-sub-form-utils';
 
 interface Sub {
@@ -22,7 +23,7 @@ interface Sub2 {
 export class TestNewVersionComponent implements OnDestroy {
   private onDestroy$: Subject<void> = new Subject();
 
-  ngxSubForm = createSubForm<Sub, Sub2>(this, {
+  ngxSubForm = createForm<Sub, Sub2>(this, FormType.SUB, {
     formControls: {
       subPropB: new FormArray([], Validators.required),
     },

@@ -5,9 +5,9 @@ import {
   FormControl,
   FormGroup,
   ValidationErrors,
-  Validator,
 } from '@angular/forms';
-import { Observable, ReplaySubject } from 'rxjs';
+import { ReplaySubject } from 'rxjs';
+import { Nilable } from 'tsdef';
 import {
   ArrayPropertyKey,
   ControlsNames,
@@ -15,36 +15,21 @@ import {
   OneOfControlsTypes,
   TypedFormGroup,
 } from '../ngx-sub-form-utils';
-import { NgxSubFormOptions, NgxSubFormWithArrayOptions } from './ngx-sub-form';
+import {
+  ComponentHooks,
+  ControlValueAccessorComponentInstance,
+  FormBindings,
+  NgxSubFormArrayOptions,
+  NgxSubFormOptions,
+} from './ngx-sub-form.types';
 
 export const deepCopy = <T>(value: T): T => JSON.parse(JSON.stringify(value));
-export type Nilable<T> = T | null | undefined;
-
-export interface NgxSubForm<FormInterface> {
-  readonly formGroup: TypedFormGroup<FormInterface>;
-  readonly formControlNames: ControlsNames<FormInterface>;
-  readonly formGroupErrors: NewFormErrors<FormInterface>;
-}
-
-export type ControlValueAccessorComponentInstance = Object &
-  // ControlValueAccessor methods are called
-  // directly by Angular and expects a value
-  // so we have to define it within ngx-sub-form
-  // and this should *never* be overridden by the component
-  Partial<Record<keyof ControlValueAccessor, never> & Record<keyof Validator, never>>;
 
 export const patchClassInstance = (componentInstance: any, obj: Object) => {
   Object.entries(obj).forEach(([key, newMethod]) => {
     componentInstance[key] = newMethod;
   });
 };
-
-export interface FormBindings<ControlInterface> {
-  readonly writeValue$: Observable<Nilable<ControlInterface>>;
-  readonly registerOnChange$: Observable<(formValue: ControlInterface | null) => void>;
-  readonly registerOnTouched$: Observable<(_: any) => void>;
-  readonly setDisabledState$: Observable<boolean>;
-}
 
 export const getControlValueAccessorBindings = <ControlInterface>(
   componentInstance: ControlValueAccessorComponentInstance,
@@ -83,25 +68,15 @@ export const safelyPatchClassInstance = (componentInstance: any, obj: Object) =>
   Object.entries(obj).forEach(([key, newMethod]) => {
     const previousMethod = componentInstance[key];
 
-    console.log('[REGISTER]', key);
-
     componentInstance[key] = (...args: any[]) => {
-      console.log('DESTROYYYYYYYY');
-
       if (previousMethod) {
         previousMethod.apply(componentInstance);
       }
 
       newMethod(args);
     };
-
-    console.log(componentInstance);
   });
 };
-
-export interface ComponentHooks {
-  readonly ngOnDestroy$: Observable<void>;
-}
 
 // following doesn't work anymore with ng9
 // https://github.com/angular/angular/issues/36776
@@ -110,7 +85,7 @@ export interface ComponentHooks {
 export const getComponentHooks = (componentInstance: Object): ComponentHooks => {
   const ngOnDestroy$$: ReplaySubject<void> = new ReplaySubject(1);
 
-  console.log('getComponentHooks');
+  // console.log('getComponentHooks');
 
   // safelyPatchClassInstance(componentInstance, {
   //   ngOnDestroy: () => {
@@ -129,7 +104,7 @@ export const getComponentHooks = (componentInstance: Object): ComponentHooks => 
   // (componentInstance as any).ngOnDestroy = () => {
   //   console.log('VICTORY');
   // };
-  console.log({ componentInstance });
+  // console.log({ componentInstance });
 
   return {
     ngOnDestroy$: ngOnDestroy$$.asObservable(),
@@ -178,12 +153,14 @@ export const getFormGroupErrors = <ControlInterface, FormInterface>(
   return Object.assign<any, any, any>({}, formGroup.errors ? { formGroup: formGroup.errors } : {}, formErrors);
 };
 
-export interface FormArrayWrapper<FormInterface> {
+interface FormArrayWrapper<FormInterface> {
   key: keyof FormInterface;
   control: FormArray;
 }
 
-export function createFormDataFromOptions<FormInterface>(options: NgxSubFormOptions<FormInterface>) {
+export function createFormDataFromOptions<ControlInterface, FormInterface>(
+  options: NgxSubFormOptions<ControlInterface, FormInterface>,
+) {
   const formGroup: TypedFormGroup<FormInterface> = new FormGroup(
     options.formControls,
     options.formGroupOptions as AbstractControlOptions,
@@ -214,7 +191,7 @@ export function createFormDataFromOptions<FormInterface>(options: NgxSubFormOpti
 export const handleFArray = <FormInterface>(
   formArrayWrappers: FormArrayWrapper<FormInterface>[],
   obj: FormInterface,
-  createFormArrayControl: NgxSubFormWithArrayOptions<FormInterface>['createFormArrayControl'] | null,
+  createFormArrayControl: NgxSubFormArrayOptions<FormInterface>['createFormArrayControl'] | null,
 ) => {
   if (!formArrayWrappers.length) {
     return;
