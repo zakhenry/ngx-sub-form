@@ -22,14 +22,14 @@ export interface NgxSubFormWithArrayOptions<FormInterface> {
   ) => FormControl;
 }
 
-export type NgxSubFormOptions<FormInterface> = {
-  formControls: Controls<FormInterface>;
-  formGroupOptions?: FormGroupOptions<FormInterface>;
+export type NgxSubFormOptions<ControlInterface> = {
+  formControls: Controls<ControlInterface>;
+  formGroupOptions?: FormGroupOptions<ControlInterface>;
   emitNullOnDestroy?: boolean;
   componentHooks: ComponentHooks;
-} & (ArrayPropertyKey<FormInterface> extends never
-  ? {} // no point defining `createFormArrayControl` if there's // not a single array in the `FormInterface`
-  : NgxSubFormWithArrayOptions<FormInterface>);
+} & (ArrayPropertyKey<ControlInterface> extends never
+  ? {} // no point defining `createFormArrayControl` if there's // not a single array in the `ControlInterface`
+  : NgxSubFormWithArrayOptions<ControlInterface>);
 
 const optionsHasInstructionsToCreateArrays = <ControlInterface, FormInterface>(
   a: NgxSubFormRemapOptions<ControlInterface, FormInterface>,
@@ -40,14 +40,39 @@ export type NgxSubFormRemapOptions<ControlInterface, FormInterface> = NgxSubForm
   fromFormGroup: (formValue: FormInterface) => ControlInterface;
 };
 
-export function createRemapSubForm<ControlInterface, FormInterface>(
+// not needed anymore
+// const isRemap = <ControlInterface, FormInterface>(
+//   options: any,
+// ): options is NgxSubFormRemapOptions<ControlInterface, FormInterface> => {
+//   return true;
+// };
+
+export function createSubForm<ControlInterface, FormInterface>(
   componentInstance: ControlValueAccessorComponentInstance,
   options: NgxSubFormRemapOptions<ControlInterface, FormInterface>,
+): NgxSubForm<FormInterface>;
+export function createSubForm<ControlInterface>(
+  componentInstance: ControlValueAccessorComponentInstance,
+  options: NgxSubFormOptions<ControlInterface>,
+): NgxSubForm<ControlInterface>;
+export function createSubForm<ControlInterface, FormInterface = ControlInterface>(
+  componentInstance: ControlValueAccessorComponentInstance,
+  options: NgxSubFormOptions<FormInterface> | NgxSubFormRemapOptions<ControlInterface, FormInterface>,
 ): NgxSubForm<FormInterface> {
-  const { formGroup, defaultValues, formControlNames, formArrays } = createFormDataFromOptions<
-    ControlInterface,
-    FormInterface
-  >(options);
+  const mergedOptions: NgxSubFormRemapOptions<ControlInterface, FormInterface> = {
+    // the following 2 `as any` are required as for example with the `fromFormGroup`
+    // we expect `FormInterface --> ControlInterface` but when doing `fromFormGroup: v => v`
+    // the type is `FormInterface --> FormInterface` and we'd get an error (hence the cast)
+    // in the first place, we need to provide those 2 functions as if we're not into a remap
+    // form we need to declare those 2 functions (to return the same value only)
+    fromFormGroup: v => (v as any) as ControlInterface,
+    toFormGroup: v => (v as any) as FormInterface,
+    ...options,
+  };
+
+  const { formGroup, defaultValues, formControlNames, formArrays } = createFormDataFromOptions<FormInterface>(
+    mergedOptions,
+  );
 
   // this doesn't work for now see issue on the function
   // as a hack I'm asking to get within options an observable for some hooks...
@@ -70,20 +95,20 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
   >(componentInstance);
 
   const transformedValue$: Observable<FormInterface> = writeValue$.pipe(
-    map(value => (isNullOrUndefined(value) ? defaultValues : options.toFormGroup(value))),
+    map(value => (isNullOrUndefined(value) ? defaultValues : mergedOptions.toFormGroup(value))),
     shareReplay({ refCount: true, bufferSize: 1 }),
   );
 
   const broadcastValueToParent$: Observable<ControlInterface> = transformedValue$.pipe(
     switchMap(() => formGroup.valueChanges.pipe(delay(0))),
-    map(value => options.fromFormGroup(value)),
+    map(value => mergedOptions.fromFormGroup(value)),
   );
 
   const emitNullOnDestroy$: Observable<null> =
     // emit null when destroyed by default
-    isNullOrUndefined(options.emitNullOnDestroy) || options.emitNullOnDestroy
+    isNullOrUndefined(mergedOptions.emitNullOnDestroy) || mergedOptions.emitNullOnDestroy
       ? // ngOnDestroy$.pipe(mapTo(null))
-        options.componentHooks.ngOnDestroy$.pipe(mapTo(null))
+        mergedOptions.componentHooks.ngOnDestroy$.pipe(mapTo(null))
       : EMPTY;
 
   const sideEffects = {
@@ -95,7 +120,7 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
         handleFormArrays<FormInterface>(
           formArrays,
           value,
-          optionsHasInstructionsToCreateArrays(options) ? options.createFormArrayControl : null,
+          optionsHasInstructionsToCreateArrays(mergedOptions) ? mergedOptions.createFormArrayControl : null,
         );
 
         formGroup.reset(value);
@@ -113,7 +138,7 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
   };
 
   forkJoin(sideEffects)
-    .pipe(takeUntil(options.componentHooks.ngOnDestroy$))
+    .pipe(takeUntil(mergedOptions.componentHooks.ngOnDestroy$))
     .subscribe();
 
   // following cannot be part of `forkJoin(sideEffects)`
@@ -123,7 +148,7 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
   registerOnChange$
     .pipe(
       switchMap(onChange => emitNullOnDestroy$.pipe(tap(value => onChange(value)))),
-      takeUntil(options.componentHooks.ngOnDestroy$.pipe(delay(0))),
+      takeUntil(mergedOptions.componentHooks.ngOnDestroy$.pipe(delay(0))),
       // takeUntil(ngOnDestroy$.pipe(delay(0))),
     )
     .subscribe();
@@ -135,15 +160,4 @@ export function createRemapSubForm<ControlInterface, FormInterface>(
       return getFormGroupErrors<ControlInterface, FormInterface>(formGroup);
     },
   };
-}
-
-export function createSubForm<ControlInterface>(
-  componentInstance: ControlValueAccessorComponentInstance,
-  options: NgxSubFormOptions<ControlInterface>,
-): NgxSubForm<ControlInterface> {
-  return createRemapSubForm<ControlInterface, ControlInterface>(componentInstance, {
-    ...options,
-    toFormGroup: val => val,
-    fromFormGroup: val => val,
-  });
 }

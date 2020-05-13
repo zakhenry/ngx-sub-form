@@ -8,6 +8,10 @@ interface Sub {
   subPropA: string[];
 }
 
+interface Sub2 {
+  subPropB: string[];
+}
+
 @Component({
   selector: 'app-test-new-version',
   templateUrl: './test-new-version.component.html',
@@ -18,17 +22,19 @@ interface Sub {
 export class TestNewVersionComponent implements OnDestroy {
   private onDestroy$: Subject<void> = new Subject();
 
-  ngxSubForm = createSubForm<Sub>(this, {
+  ngxSubForm = createSubForm<Sub, Sub2>(this, {
     formControls: {
-      subPropA: new FormArray([], Validators.required),
+      subPropB: new FormArray([], Validators.required),
     },
     createFormArrayControl: (key, value) => {
-      if (key === 'subPropA') {
+      if (key === 'subPropB') {
         return new FormControl(value, [Validators.required]);
       }
 
       return new FormControl();
     },
+    toFormGroup: obj => ({ subPropB: obj.subPropA }),
+    fromFormGroup: formValue => ({ subPropA: formValue.subPropB }),
     componentHooks: {
       ngOnDestroy$: this.onDestroy$.asObservable(),
     },

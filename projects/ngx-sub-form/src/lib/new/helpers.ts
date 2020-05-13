@@ -15,7 +15,7 @@ import {
   OneOfControlsTypes,
   TypedFormGroup,
 } from '../ngx-sub-form-utils';
-import { NgxSubFormRemapOptions, NgxSubFormWithArrayOptions } from './ngx-sub-form';
+import { NgxSubFormOptions, NgxSubFormWithArrayOptions } from './ngx-sub-form';
 
 export const deepCopy = <T>(value: T): T => JSON.parse(JSON.stringify(value));
 export type Nilable<T> = T | null | undefined;
@@ -183,9 +183,7 @@ export interface FormArrayWrapper<FormInterface> {
   control: FormArray;
 }
 
-export function createFormDataFromOptions<ControlInterface, FormInterface>(
-  options: NgxSubFormRemapOptions<ControlInterface, FormInterface>,
-) {
+export function createFormDataFromOptions<FormInterface>(options: NgxSubFormOptions<FormInterface>) {
   const formGroup: TypedFormGroup<FormInterface> = new FormGroup(
     options.formControls,
     options.formGroupOptions as AbstractControlOptions,
