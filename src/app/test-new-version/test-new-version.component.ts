@@ -39,19 +39,19 @@ export class TestNewVersionComponent implements OnDestroy {
     componentHooks: {
       ngOnDestroy$: this.onDestroy$.asObservable(),
     },
-    // formGroupOptions: {
-    //   validators: [
-    //     formGroup => {
-    //       if (formGroup.value.subPropA !== 'wow') {
-    //         return {
-    //           subPropANotWow: true,
-    //         };
-    //       }
+    formGroupOptions: {
+      validators: [
+        formGroup => {
+          if (formGroup.value.subPropB.length) {
+            return {
+              subPropANotWow: true,
+            };
+          }
 
-    //       return null;
-    //     },
-    //   ],
-    // },
+          return null;
+        },
+      ],
+    },
   });
 
   ngOnDestroy(): void {

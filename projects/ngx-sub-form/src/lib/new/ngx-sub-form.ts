@@ -43,7 +43,7 @@ export function createForm<ControlInterface, FormInterface = ControlInterface>(
   formType: FormType.SUB,
   options: NgxSubFormOptions<ControlInterface, FormInterface>,
 ): NgxSubForm<FormInterface>;
-export function createForm<ControlInterface, FormInterface = ControlInterface>(
+export function createForm<ControlInterface, FormInterface>(
   componentInstance: ControlValueAccessorComponentInstance,
   formType: FormType,
   options: NgxFormOptions<ControlInterface, FormInterface>,

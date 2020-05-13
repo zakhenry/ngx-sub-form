@@ -61,8 +61,8 @@ type NgxSubFormArray<FormInterface> = ArrayPropertyKey<FormInterface> extends ne
   : NgxSubFormArrayOptions<FormInterface>;
 
 export type NgxSubFormOptions<ControlInterface, FormInterface = ControlInterface> = {
-  formControls: Controls<ControlInterface>;
-  formGroupOptions?: FormGroupOptions<ControlInterface>;
+  formControls: Controls<FormInterface>;
+  formGroupOptions?: FormGroupOptions<FormInterface>;
   emitNullOnDestroy?: boolean;
   componentHooks: ComponentHooks;
 } & NgxSubFormRemap<ControlInterface, FormInterface> &
