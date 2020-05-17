@@ -130,8 +130,7 @@ export function createForm<ControlInterface, FormInterface>(
   const emitNullOnDestroy$: Observable<null> =
     // emit null when destroyed by default
     isNullOrUndefined(options.emitNullOnDestroy) || options.emitNullOnDestroy
-      ? // ngOnDestroy$.pipe(mapTo(null))
-        options.componentHooks.ngOnDestroy$.pipe(mapTo(null))
+      ? options.componentHooks.ngOnDestroy$.pipe(mapTo(null))
       : EMPTY;
 
   const sideEffects = {
@@ -174,7 +173,6 @@ export function createForm<ControlInterface, FormInterface>(
     .pipe(
       switchMap(onChange => emitNullOnDestroy$.pipe(tap(value => onChange(value)))),
       takeUntil(options.componentHooks.ngOnDestroy$.pipe(delay(0))),
-      // takeUntil(ngOnDestroy$.pipe(delay(0))),
     )
     .subscribe();
 
