@@ -1,0 +1,34 @@
+<fieldset [formGroup]="formGroup" class="container">
+  <legend>Droid form</legend>
+
+  <mat-form-field>
+    <mat-select data-select-droid-type placeholder="Select droid type" [formControlName]="formControlNames.droidType">
+      <mat-option
+        data-select-droid-type-option
+        *ngFor="let droidType of DroidType | keyvalue"
+        [value]="droidType.value"
+      >
+        {{ droidType.value }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
+
+  <div [ngSwitch]="formGroupValues.droidType">
+    <app-protocol-droid
+      *ngSwitchCase="DroidType.PROTOCOL"
+      [formControlName]="formControlNames.protocolDroid"
+    ></app-protocol-droid>
+    <app-medical-droid
+      *ngSwitchCase="DroidType.MEDICAL"
+      [formControlName]="formControlNames.medicalDroid"
+    ></app-medical-droid>
+    <app-astromech-droid
+      *ngSwitchCase="DroidType.ASTROMECH"
+      [formControlName]="formControlNames.astromechDroid"
+    ></app-astromech-droid>
+    <app-assassin-droid
+      *ngSwitchCase="DroidType.ASSASSIN"
+      [formControlName]="formControlNames.assassinDroid"
+    ></app-assassin-droid>
+  </div>
+</fieldset>
