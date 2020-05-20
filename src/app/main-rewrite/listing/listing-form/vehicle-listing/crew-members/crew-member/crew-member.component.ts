@@ -1,6 +1,9 @@
 import { Component } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
-import { Controls, NgxSubFormComponent, subformComponentProviders } from 'ngx-sub-form';
+import { subformComponentProviders } from 'ngx-sub-form';
+import { Subject } from 'rxjs';
+import { createForm } from '../../../../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form';
+import { FormType } from '../../../../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form.types';
 import { CrewMember } from '../../../../../../interfaces/crew-member.interface';
 
 @Component({
@@ -9,11 +12,22 @@ import { CrewMember } from '../../../../../../interfaces/crew-member.interface';
   styleUrls: ['./crew-member.component.scss'],
   providers: subformComponentProviders(CrewMemberComponent),
 })
-export class CrewMemberComponent extends NgxSubFormComponent<CrewMember> {
-  protected getFormControls(): Controls<CrewMember> {
-    return {
+export class CrewMemberComponent {
+  private onDestroy$: Subject<void> = new Subject();
+
+  public form = createForm<CrewMember>(this, {
+    formType: FormType.SUB,
+    formControls: {
       firstName: new FormControl(null, [Validators.required]),
       lastName: new FormControl(null, [Validators.required]),
-    };
+    },
+    componentHooks: {
+      ngOnDestroy$: this.onDestroy$.asObservable(),
+    },
+  });
+
+  public ngOnDestroy(): void {
+    this.onDestroy$.next();
+    this.onDestroy$.complete();
   }
 }

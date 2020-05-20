@@ -1,7 +1,10 @@
 import { Component } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
-import { Controls, NgxSubFormComponent, subformComponentProviders } from 'ngx-sub-form';
+import { subformComponentProviders } from 'ngx-sub-form';
+import { Subject } from 'rxjs';
 import { DroidType, MedicalDroid } from 'src/app/interfaces/droid.interface';
+import { createForm } from '../../../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form';
+import { FormType } from '../../../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form.types';
 
 @Component({
   selector: 'app-medical-droid',
@@ -9,18 +12,25 @@ import { DroidType, MedicalDroid } from 'src/app/interfaces/droid.interface';
   styleUrls: ['./medical-droid.component.scss'],
   providers: subformComponentProviders(MedicalDroidComponent),
 })
-export class MedicalDroidComponent extends NgxSubFormComponent<MedicalDroid> {
-  protected getFormControls(): Controls<MedicalDroid> {
-    return {
+export class MedicalDroidComponent {
+  private onDestroy$: Subject<void> = new Subject();
+
+  public form = createForm<MedicalDroid>(this, {
+    formType: FormType.SUB,
+    formControls: {
       color: new FormControl(null, { validators: [Validators.required] }),
       name: new FormControl(null, { validators: [Validators.required] }),
-      droidType: new FormControl(null, { validators: [Validators.required] }),
-      canHealHumans: new FormControl(null, { validators: [Validators.required] }),
-      canFixRobots: new FormControl(null, { validators: [Validators.required] }),
-    };
-  }
+      droidType: new FormControl(DroidType.MEDICAL, { validators: [Validators.required] }),
+      canHealHumans: new FormControl(false, { validators: [Validators.required] }),
+      canFixRobots: new FormControl(false, { validators: [Validators.required] }),
+    },
+    componentHooks: {
+      ngOnDestroy$: this.onDestroy$.asObservable(),
+    },
+  });
 
-  public getDefaultValues(): Partial<MedicalDroid> | null {
-    return { droidType: DroidType.MEDICAL, canHealHumans: false, canFixRobots: false };
+  public ngOnDestroy(): void {
+    this.onDestroy$.next();
+    this.onDestroy$.complete();
   }
 }

@@ -1,17 +1,12 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, Input, Output } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
-import {
-  Controls,
-  // NgxAutomaticRootFormComponent,
-  // NGX_SUB_FORM_HANDLE_VALUE_CHANGES_RATE_STRATEGIES,
-  DataInput,
-  NgxRootFormComponent,
-} from 'ngx-sub-form';
+import { Subject } from 'rxjs';
 import { ListingType, OneListing } from 'src/app/interfaces/listing.interface';
+import { createForm } from '../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form';
+import { FormType } from '../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form.types';
 import { OneDroid } from '../../../interfaces/droid.interface';
 import { OneVehicle } from '../../../interfaces/vehicle.interface';
 import { UnreachableCase } from '../../../shared/utils';
-// import { Observable } from 'rxjs';
 
 interface OneListingForm {
   vehicleProduct: OneVehicle | null;
@@ -23,35 +18,32 @@ interface OneListingForm {
   price: number;
 }
 
-// if you wish to try the automatic root form component uncomment lines containing:
-// - `extends NgxAutomaticRootFormComponent`
-// - the `handleDataOutput` method
-// - the 3 related imports at the top
-
 @Component({
   selector: 'app-listing-form',
   templateUrl: './listing-form.component.html',
   styleUrls: ['./listing-form.component.scss'],
 })
-// export class ListingFormComponent extends NgxAutomaticRootFormComponent<OneListing, OneListingForm>
-export class ListingFormComponent extends NgxRootFormComponent<OneListing, OneListingForm> {
-  @DataInput()
-  // tslint:disable-next-line:no-input-rename
-  @Input('listing')
-  public dataInput: Required<OneListing> | null | undefined;
+export class ListingFormComponent {
+  private input$: Subject<OneListing | undefined> = new Subject();
+  @Input() set listing(value: OneListing | undefined) {
+    this.input$.next(value);
+  }
 
-  // tslint:disable-next-line:no-output-rename
-  @Output('listingUpdated')
-  public dataOutput: EventEmitter<OneListing> = new EventEmitter();
+  private disabled$: Subject<boolean> = new Subject();
+  @Input() set disabled(value: boolean | undefined) {
+    this.disabled$.next(!value ? false : value);
+  }
 
-  public ListingType: typeof ListingType = ListingType;
+  @Output() listingUpdated: Subject<OneListing> = new Subject();
 
-  // protected handleEmissionRate(): (obs$: Observable<OneListingForm>) => Observable<OneListingForm> {
-  //   return NGX_SUB_FORM_HANDLE_VALUE_CHANGES_RATE_STRATEGIES.debounce(500);
-  // }
+  private onDestroy$: Subject<void> = new Subject();
 
-  protected getFormControls(): Controls<OneListingForm> {
-    return {
+  public form = createForm<OneListing, OneListingForm>(this, {
+    formType: FormType.ROOT,
+    disabled$: this.disabled$,
+    input$: this.input$,
+    output$: this.listingUpdated,
+    formControls: {
       vehicleProduct: new FormControl(null),
       droidProduct: new FormControl(null),
       listingType: new FormControl(null, Validators.required),
@@ -59,50 +51,40 @@ export class ListingFormComponent extends NgxRootFormComponent<OneListing, OneLi
       title: new FormControl(null, Validators.required),
       imageUrl: new FormControl(null, Validators.required),
       price: new FormControl(null, Validators.required),
-    };
-  }
+    },
+    toFormGroup: (obj: OneListing): OneListingForm => {
+      const { listingType, product, ...commonValues } = obj;
 
-  public getFormGroupControlOptions(): any {
-    return {
-      validators: [
-        (formGroup: any) => {
-          return {
-            tesssst: true,
-          };
+      return {
+        vehicleProduct: obj.listingType === ListingType.VEHICLE ? obj.product : null,
+        droidProduct: obj.listingType === ListingType.DROID ? obj.product : null,
+        listingType: obj.listingType,
+        ...commonValues,
+      };
+    },
+    fromFormGroup: (formValue: OneListingForm): OneListing => {
+      const { vehicleProduct, droidProduct, listingType, ...commonValues } = formValue;
 
-          return null;
-        },
-      ],
-    };
-  }
+      switch (listingType) {
+        case ListingType.DROID:
+          return droidProduct ? { product: droidProduct, listingType, ...commonValues } : (null as any); //todo;
+        case ListingType.VEHICLE:
+          return vehicleProduct ? { product: vehicleProduct, listingType, ...commonValues } : (null as any); //todo;
+        case null:
+          return null as any; // todo;
+        default:
+          throw new UnreachableCase(listingType);
+      }
+    },
+    componentHooks: {
+      ngOnDestroy$: this.onDestroy$.asObservable(),
+    },
+  });
 
-  protected transformFromFormGroup(formValue: OneListingForm): OneListing | null {
-    const { vehicleProduct, droidProduct, listingType, ...commonValues } = formValue;
+  public ListingType: typeof ListingType = ListingType;
 
-    switch (listingType) {
-      case ListingType.DROID:
-        return droidProduct ? { product: droidProduct, listingType, ...commonValues } : null;
-      case ListingType.VEHICLE:
-        return vehicleProduct ? { product: vehicleProduct, listingType, ...commonValues } : null;
-      case null:
-        return null;
-      default:
-        throw new UnreachableCase(listingType);
-    }
-  }
-
-  protected transformToFormGroup(obj: OneListing | null): OneListingForm | null {
-    if (!obj) {
-      return null;
-    }
-
-    const { listingType, product, ...commonValues } = obj;
-
-    return {
-      vehicleProduct: obj.listingType === ListingType.VEHICLE ? obj.product : null,
-      droidProduct: obj.listingType === ListingType.DROID ? obj.product : null,
-      listingType: obj.listingType,
-      ...commonValues,
-    };
+  public ngOnDestroy(): void {
+    this.onDestroy$.next();
+    this.onDestroy$.complete();
   }
 }

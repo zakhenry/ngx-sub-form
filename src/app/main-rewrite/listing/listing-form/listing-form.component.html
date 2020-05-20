@@ -1,36 +1,36 @@
 <mat-card>
   <mat-card-header>
-    <mat-card-title data-title [class.not-visible]="!formGroupValues.title">
-      {{ formGroupValues.title }}
+    <mat-card-title data-title [class.not-visible]="!form.formGroup.value.title">
+      {{ form.formGroup.value.title }}
     </mat-card-title>
-    <mat-card-subtitle data-price [class.not-visible]="!formGroupValues.price">
-      £{{ formGroupValues.price | number }}
+    <mat-card-subtitle data-price [class.not-visible]="!form.formGroup.value.price">
+      £{{ form.formGroup.value.price | number }}
     </mat-card-subtitle>
   </mat-card-header>
   <div class="img-container">
     <img
-      *ngIf="formGroupValues.imageUrl"
+      *ngIf="form.formGroup.value.imageUrl"
       mat-card-image
-      [src]="formGroupValues.imageUrl"
-      alt="Photo of {{ formGroupValues.title }}"
+      [src]="form.formGroup.value.imageUrl"
+      alt="Photo of {{ form.formGroup.value.title }}"
     />
   </div>
   <mat-card-content>
-    <form [formGroup]="formGroup">
+    <form [formGroup]="form.formGroup">
       <mat-form-field>
         <input
           matInput
           data-input-id
           type="text"
           placeholder="ID"
-          [formControlName]="formControlNames.id"
+          [formControlName]="form.formControlNames.id"
           autocomplete="off"
         />
       </mat-form-field>
 
       <!-- this is useful to make sure the type of the error is correct -->
       <!-- as it could be either an object or an array and AoT would notice if not correctly typed -->
-      <mat-error data-input-id-error *ngIf="formGroupErrors?.id?.required">
+      <mat-error data-input-id-error *ngIf="form.formGroupErrors?.id?.required">
         ID is required
       </mat-error>
 
@@ -40,12 +40,12 @@
           data-input-title
           type="text"
           placeholder="Title"
-          [formControlName]="formControlNames.title"
+          [formControlName]="form.formControlNames.title"
           autocomplete="off"
         />
       </mat-form-field>
 
-      <mat-error data-input-title-error *ngIf="formGroupErrors?.title?.required">
+      <mat-error data-input-title-error *ngIf="form.formGroupErrors?.title?.required">
         Title is required
       </mat-error>
 
@@ -55,12 +55,12 @@
           data-input-image-url
           type="text"
           placeholder="Image Url"
-          [formControlName]="formControlNames.imageUrl"
+          [formControlName]="form.formControlNames.imageUrl"
           autocomplete="off"
         />
       </mat-form-field>
 
-      <mat-error data-input-image-url-error *ngIf="formGroupErrors?.imageUrl?.required">
+      <mat-error data-input-image-url-error *ngIf="form.formGroupErrors?.imageUrl?.required">
         Image url is required
       </mat-error>
 
@@ -70,12 +70,12 @@
           data-input-price
           type="number"
           placeholder="Price"
-          [formControlName]="formControlNames.price"
+          [formControlName]="form.formControlNames.price"
           autocomplete="off"
         />
       </mat-form-field>
 
-      <mat-error data-input-price-error *ngIf="formGroupErrors?.price?.required">
+      <mat-error data-input-price-error *ngIf="form.formGroupErrors?.price?.required">
         Price is required
       </mat-error>
 
@@ -83,7 +83,7 @@
         <mat-select
           data-select-listing-type
           placeholder="Select listing type"
-          [formControlName]="formControlNames.listingType"
+          [formControlName]="form.formControlNames.listingType"
         >
           <mat-option
             data-select-listing-type-option
@@ -95,15 +95,15 @@
         </mat-select>
       </mat-form-field>
 
-      <div [ngSwitch]="formGroupValues.listingType">
+      <div [ngSwitch]="form.formGroup.value.listingType">
         <app-droid-product
           *ngSwitchCase="ListingType.DROID"
-          [formControlName]="formControlNames.droidProduct"
+          [formControlName]="form.formControlNames.droidProduct"
         ></app-droid-product>
 
         <app-vehicle-product
           *ngSwitchCase="ListingType.VEHICLE"
-          [formControlName]="formControlNames.vehicleProduct"
+          [formControlName]="form.formControlNames.vehicleProduct"
         ></app-vehicle-product>
       </div>
     </form>
@@ -129,12 +129,12 @@
         mat-raised-button
         color="primary"
         (click)="manualSave()"
-        [disabled]="formGroup.invalid || formGroup.disabled"
+        [disabled]="form.formGroup.invalid || form.formGroup.disabled"
       >
         Upsert
       </button>
 
-      <div *ngIf="formGroup.invalid" class="invalid-form">
+      <div *ngIf="form.formGroup.invalid" class="invalid-form">
         Form is invalid
       </div>
     </div>
@@ -149,7 +149,7 @@
       this is an important test as we want to make sure that `formGroupErrors` is null when there's no error
       if we return an empty object the `*ngIf` condition would be considered valid
     -->
-    <pre *ngIf="formGroupErrors as errors; else noError" data-errors>{{ errors | json }}</pre>
+    <pre *ngIf="form.formGroupErrors as errors; else noError" data-errors>{{ errors | json }}</pre>
 
     <ng-template #noError>
       <span data-no-error>
@@ -163,6 +163,6 @@
   <mat-card-title>Form values</mat-card-title>
 
   <mat-card-content>
-    <pre>{{ formGroupValues | json }}</pre>
+    <pre>{{ form.formGroup.value | json }}</pre>
   </mat-card-content>
 </mat-card>

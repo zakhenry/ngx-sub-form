@@ -135,11 +135,9 @@ export const getFormGroupErrors = <ControlInterface, FormInterface>(
         const accHoldingArrays = acc as Record<keyof ControlInterface, Record<number, ValidationErrors>>;
         accHoldingArrays[key as keyof ControlInterface] = errorsInArray;
       }
-    } else {
-      if (control.errors) {
-        const accHoldingNonArrays = acc as Record<keyof ControlInterface, ValidationErrors>;
-        accHoldingNonArrays[key as keyof ControlInterface] = control.errors;
-      }
+    } else if (control.errors) {
+      const accHoldingNonArrays = acc as Record<keyof ControlInterface, ValidationErrors>;
+      accHoldingNonArrays[key as keyof ControlInterface] = control.errors;
     }
 
     return acc;

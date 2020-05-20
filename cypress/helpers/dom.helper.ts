@@ -3,7 +3,7 @@
 import { DroidType } from '../../src/app/interfaces/droid.interface';
 import { ListingType } from '../../src/app/interfaces/listing.interface';
 import { VehicleType } from '../../src/app/interfaces/vehicle.interface';
-import { extractErrors, FormElement, ListElement } from './data.helper';
+import { FormElement, ListElement } from './data.helper';
 
 const getTextFromTag = (element: HTMLElement, tag: string): string =>
   Cypress.$(element)
@@ -85,14 +85,7 @@ export const DOM = {
         return cy.get('app-listing');
       },
       get errors() {
-        return {
-          get cy() {
-            return cy.get(`*[data-errors]`);
-          },
-          get obj() {
-            return DOM.form.errors.cy.then(extractErrors);
-          },
-        };
+        return cy.get(`*[data-errors]`);
       },
       get noErrors() {
         return cy.get(`*[data-no-error]`);

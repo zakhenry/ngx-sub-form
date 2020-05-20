@@ -34,6 +34,7 @@ export interface NgxSubForm<FormInterface> {
   readonly formGroup: TypedFormGroup<FormInterface>;
   readonly formControlNames: ControlsNames<FormInterface>;
   readonly formGroupErrors: NewFormErrors<FormInterface>;
+  readonly createFormArrayControl: any;
 }
 
 export interface NgxRootForm<ControlInterface> extends NgxSubForm<ControlInterface> {

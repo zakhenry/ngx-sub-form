@@ -62,20 +62,6 @@ export class ListingFormComponent extends NgxRootFormComponent<OneListing, OneLi
     };
   }
 
-  public getFormGroupControlOptions(): any {
-    return {
-      validators: [
-        (formGroup: any) => {
-          return {
-            tesssst: true,
-          };
-
-          return null;
-        },
-      ],
-    };
-  }
-
   protected transformFromFormGroup(formValue: OneListingForm): OneListing | null {
     const { vehicleProduct, droidProduct, listingType, ...commonValues } = formValue;
 

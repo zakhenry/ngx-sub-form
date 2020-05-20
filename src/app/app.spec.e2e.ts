@@ -1,15 +1,15 @@
 /// <reference types="Cypress" />
 
+import { extractErrors, FormElement, hardcodedElementsToTestList } from '../../cypress/helpers/data.helper';
 import { DOM, expectAll } from '../../cypress/helpers/dom.helper';
-import { hardCodedListings } from './services/listings.data';
-import { hardcodedElementsToTestList, FormElement } from '../../cypress/helpers/data.helper';
-import { VehicleListing, ListingType } from './interfaces/listing.interface';
-import { Spaceship, Speeder, VehicleType } from './interfaces/vehicle.interface';
 import { DroidType } from './interfaces/droid.interface';
+import { ListingType, VehicleListing } from './interfaces/listing.interface';
+import { Spaceship, Speeder, VehicleType } from './interfaces/vehicle.interface';
+import { hardCodedListings } from './services/listings.data';
 
 context(`EJawa demo`, () => {
   beforeEach(() => {
-    cy.visit('');
+    cy.visit('/rewrite');
   });
 
   it(`should have a default list displayed`, () => {
@@ -80,171 +80,185 @@ context(`EJawa demo`, () => {
   it(`should display the (nested) errors from the form`, () => {
     DOM.createNewButton.click();
 
-    DOM.form.errors.obj.should('eql', {
-      listingType: {
-        required: true,
-      },
-      title: {
-        required: true,
-      },
-      imageUrl: {
-        required: true,
-      },
-      price: {
-        required: true,
-      },
+    DOM.form.errors.should($el => {
+      expect(extractErrors($el)).to.eql({
+        listingType: {
+          required: true,
+        },
+        title: {
+          required: true,
+        },
+        imageUrl: {
+          required: true,
+        },
+        price: {
+          required: true,
+        },
+      });
     });
 
     DOM.form.elements.selectListingTypeByType(ListingType.VEHICLE);
 
-    DOM.form.errors.obj.should('eql', {
-      vehicleProduct: {
-        vehicleType: {
+    DOM.form.errors.should($el => {
+      expect(extractErrors($el)).to.eql({
+        vehicleProduct: {
+          vehicleType: {
+            required: true,
+          },
+        },
+        title: {
           required: true,
         },
-      },
-      title: {
-        required: true,
-      },
-      imageUrl: {
-        required: true,
-      },
-      price: {
-        required: true,
-      },
+        imageUrl: {
+          required: true,
+        },
+        price: {
+          required: true,
+        },
+      });
     });
 
     DOM.form.elements.vehicleForm.selectVehicleTypeByType(VehicleType.SPACESHIP);
 
-    DOM.form.errors.obj.should('eql', {
-      vehicleProduct: {
-        spaceship: {
-          color: {
-            required: true,
-          },
-          crewMembers: {
-            required: true,
-          },
-          wingCount: {
-            required: true,
+    DOM.form.errors.should($el => {
+      expect(extractErrors($el)).to.eql({
+        vehicleProduct: {
+          spaceship: {
+            color: {
+              required: true,
+            },
+            crewMembers: {
+              required: true,
+            },
+            wingCount: {
+              required: true,
+            },
           },
         },
-      },
-      title: {
-        required: true,
-      },
-      imageUrl: {
-        required: true,
-      },
-      price: {
-        required: true,
-      },
+        title: {
+          required: true,
+        },
+        imageUrl: {
+          required: true,
+        },
+        price: {
+          required: true,
+        },
+      });
     });
 
     DOM.form.elements.vehicleForm.addCrewMemberButton.click();
 
-    DOM.form.errors.obj.should('eql', {
-      vehicleProduct: {
-        spaceship: {
-          color: {
-            required: true,
-          },
-          crewMembers: {
-            crewMembers: [
-              {
-                firstName: {
-                  required: true,
-                },
-                lastName: {
-                  required: true,
+    DOM.form.errors.should($el => {
+      expect(extractErrors($el)).to.eql({
+        vehicleProduct: {
+          spaceship: {
+            color: {
+              required: true,
+            },
+            crewMembers: {
+              crewMembers: {
+                0: {
+                  firstName: {
+                    required: true,
+                  },
+                  lastName: {
+                    required: true,
+                  },
                 },
               },
-            ],
-          },
-          wingCount: {
-            required: true,
+            },
+            wingCount: {
+              required: true,
+            },
           },
         },
-      },
-      title: {
-        required: true,
-      },
-      imageUrl: {
-        required: true,
-      },
-      price: {
-        required: true,
-      },
+        title: {
+          required: true,
+        },
+        imageUrl: {
+          required: true,
+        },
+        price: {
+          required: true,
+        },
+      });
     });
 
     DOM.form.elements.selectListingTypeByType(ListingType.DROID);
 
-    DOM.form.errors.obj.should('eql', {
-      droidProduct: {
-        droidType: {
+    DOM.form.errors.should($el => {
+      expect(extractErrors($el)).to.eql({
+        droidProduct: {
+          droidType: {
+            required: true,
+          },
+        },
+        title: {
           required: true,
         },
-      },
-      title: {
-        required: true,
-      },
-      imageUrl: {
-        required: true,
-      },
-      price: {
-        required: true,
-      },
+        imageUrl: {
+          required: true,
+        },
+        price: {
+          required: true,
+        },
+      });
     });
 
     DOM.form.elements.droidForm.selectDroidTypeByType(DroidType.ASSASSIN);
 
-    DOM.form.errors.obj.should('eql', {
-      droidProduct: {
-        assassinDroid: {
-          color: {
-            required: true,
-          },
-          name: {
-            required: true,
-          },
-          weapons: {
-            required: true,
+    DOM.form.errors.should($el => {
+      expect(extractErrors($el)).to.eql({
+        droidProduct: {
+          assassinDroid: {
+            color: {
+              required: true,
+            },
+            name: {
+              required: true,
+            },
+            weapons: {
+              required: true,
+            },
           },
         },
-      },
-      title: {
-        required: true,
-      },
-      imageUrl: {
-        required: true,
-      },
-      price: {
-        required: true,
-      },
+        title: {
+          required: true,
+        },
+        imageUrl: {
+          required: true,
+        },
+        price: {
+          required: true,
+        },
+      });
     });
 
     DOM.form.elements.droidForm.name.type(`IG-86 sentinel`);
 
-    DOM.form.errors.obj.should('eql', {
-      droidProduct: {
-        assassinDroid: {
-          color: {
-            required: true,
-          },
-          weapons: {
-            required: true,
+    DOM.form.errors.should($el => {
+      expect(extractErrors($el)).to.eql({
+        droidProduct: {
+          assassinDroid: {
+            color: {
+              required: true,
+            },
+            weapons: {
+              required: true,
+            },
           },
         },
-      },
-      title: {
-        required: true,
-      },
-      imageUrl: {
-        required: true,
-      },
-      price: {
-        required: true,
-      },
+        title: {
+          required: true,
+        },
+        imageUrl: {
+          required: true,
+        },
+        price: {
+          required: true,
+        },
+      });
     });
   });
 
@@ -253,7 +267,7 @@ context(`EJawa demo`, () => {
     // previously we returned an empty object which made that check way harder in the template
     DOM.list.elements.cy.eq(0).click();
 
-    DOM.form.errors.cy.should('not.exist');
+    DOM.form.errors.should('not.exist');
     DOM.form.noErrors.should('exist');
   });
 

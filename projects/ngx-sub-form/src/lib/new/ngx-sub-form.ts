@@ -1,4 +1,5 @@
 import { ɵmarkDirty as markDirty } from '@angular/core';
+import isEqual from 'fast-deep-equal';
 import { EMPTY, forkJoin, Observable, of } from 'rxjs';
 import { delay, filter, map, mapTo, shareReplay, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { isNullOrUndefined } from '../ngx-sub-form-utils';
@@ -59,6 +60,13 @@ export function createForm<ControlInterface, FormInterface>(
     FormInterface
   >(options);
 
+  let isRemoved = false;
+
+  options.componentHooks.ngOnDestroy$.subscribe(() => {
+    isRemoved = true;
+  });
+
+  let first = true;
   // this doesn't work for now see issue on the function
   // as a hack I'm asking to get within options an observable for some hooks...
   // const { ngOnDestroy$ } = getComponentHooks(componentInstance);
@@ -67,6 +75,16 @@ export function createForm<ControlInterface, FormInterface>(
   // and support nested errors
   patchClassInstance(componentInstance, {
     validate: () => {
+      if (first) {
+        first = false;
+        setTimeout(() => {
+          formGroup.updateValueAndValidity();
+        }, 0);
+
+        return null;
+      }
+      if (isRemoved) return null;
+
       if (formGroup.valid) {
         return null;
       }
@@ -117,7 +135,18 @@ export function createForm<ControlInterface, FormInterface>(
   );
 
   const broadcastValueToParent$: Observable<ControlInterface> = transformedValue$.pipe(
-    switchMap(() => formGroup.valueChanges.pipe(delay(0))),
+    switchMap(transformedValue =>
+      formGroup.valueChanges.pipe(
+        delay(0),
+        filter(formValue => {
+          if (!isRoot<ControlInterface, FormInterface>(options)) {
+            return true;
+          }
+
+          return !isEqual(transformedValue, formValue);
+        }),
+      ),
+    ),
     filter(() => !isRoot<ControlInterface, FormInterface>(options) || formGroup.valid),
     map(value =>
       isRemap<ControlInterface, FormInterface>(options)
@@ -182,5 +211,7 @@ export function createForm<ControlInterface, FormInterface>(
     get formGroupErrors() {
       return getFormGroupErrors<ControlInterface, FormInterface>(formGroup);
     },
+    // todo
+    createFormArrayControl: (options as any).createFormArrayControl,
   };
 }
