@@ -1,7 +1,7 @@
 import { ɵmarkDirty as markDirty } from '@angular/core';
 import isEqual from 'fast-deep-equal';
 import { EMPTY, forkJoin, Observable, of } from 'rxjs';
-import { delay, filter, map, mapTo, shareReplay, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { delay, filter, map, mapTo, shareReplay, switchMap, take, takeUntil, tap } from 'rxjs/operators';
 import { isNullOrUndefined } from '../ngx-sub-form-utils';
 import {
   createFormDataFromOptions,
@@ -62,7 +62,7 @@ export function createForm<ControlInterface, FormInterface>(
 
   let isRemoved = false;
 
-  options.componentHooks.ngOnDestroy$.subscribe(() => {
+  options.componentHooks.ngOnDestroy$.pipe(take(1)).subscribe(() => {
     isRemoved = true;
   });
 
@@ -83,6 +83,7 @@ export function createForm<ControlInterface, FormInterface>(
 
         return null;
       }
+
       if (isRemoved) return null;
 
       if (formGroup.valid) {
