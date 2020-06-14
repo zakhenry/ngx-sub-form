@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
+import { getObservableLifecycle, ObservableLifecycle } from 'ngx-observable-lifecycle';
 import { subformComponentProviders } from 'ngx-sub-form';
-import { Subject } from 'rxjs';
 import { createForm } from '../../../../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form';
 import { FormType } from '../../../../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form.types';
 import { CrewMember } from '../../../../../../interfaces/crew-member.interface';
 
+@ObservableLifecycle()
 @Component({
   selector: 'app-crew-member',
   templateUrl: './crew-member.component.html',
@@ -13,8 +14,6 @@ import { CrewMember } from '../../../../../../interfaces/crew-member.interface';
   providers: subformComponentProviders(CrewMemberComponent),
 })
 export class CrewMemberComponent {
-  private onDestroy$: Subject<void> = new Subject();
-
   public form = createForm<CrewMember>(this, {
     formType: FormType.SUB,
     formControls: {
@@ -22,12 +21,7 @@ export class CrewMemberComponent {
       lastName: new FormControl(null, [Validators.required]),
     },
     componentHooks: {
-      ngOnDestroy$: this.onDestroy$.asObservable(),
+      onDestroy: getObservableLifecycle(this).onDestroy,
     },
   });
-
-  public ngOnDestroy(): void {
-    this.onDestroy$.next();
-    this.onDestroy$.complete();
-  }
 }

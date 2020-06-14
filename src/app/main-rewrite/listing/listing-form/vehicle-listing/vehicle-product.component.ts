@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
+import { getObservableLifecycle, ObservableLifecycle } from 'ngx-observable-lifecycle';
 import { subformComponentProviders } from 'ngx-sub-form';
-import { Subject } from 'rxjs';
 import { OneVehicle, Spaceship, Speeder, VehicleType } from 'src/app/interfaces/vehicle.interface';
 import { UnreachableCase } from 'src/app/shared/utils';
 import { createForm } from '../../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form';
@@ -13,6 +13,7 @@ export interface OneVehicleForm {
   vehicleType: VehicleType | null;
 }
 
+@ObservableLifecycle()
 @Component({
   selector: 'app-vehicle-product',
   templateUrl: './vehicle-product.component.html',
@@ -21,8 +22,6 @@ export interface OneVehicleForm {
 })
 export class VehicleProductComponent {
   public VehicleType = VehicleType;
-
-  private onDestroy$: Subject<void> = new Subject();
 
   public form = createForm<OneVehicle, OneVehicleForm>(this, {
     formType: FormType.SUB,
@@ -51,12 +50,7 @@ export class VehicleProductComponent {
       }
     },
     componentHooks: {
-      ngOnDestroy$: this.onDestroy$.asObservable(),
+      onDestroy: getObservableLifecycle(this).onDestroy,
     },
   });
-
-  public ngOnDestroy(): void {
-    this.onDestroy$.next();
-    this.onDestroy$.complete();
-  }
 }

@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
+import { getObservableLifecycle, ObservableLifecycle } from 'ngx-observable-lifecycle';
 import { subformComponentProviders } from 'ngx-sub-form';
-import { Subject } from 'rxjs';
 import { AssassinDroid, AssassinDroidWeapon, DroidType } from 'src/app/interfaces/droid.interface';
 import { createForm } from '../../../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form';
 import { FormType } from '../../../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form.types';
@@ -13,6 +13,7 @@ export const ASSASSIN_DROID_WEAPON_TEXT: { [K in AssassinDroidWeapon]: string } 
   [AssassinDroidWeapon.AXE]: 'Axe',
 };
 
+@ObservableLifecycle()
 @Component({
   selector: 'app-assassin-droid',
   templateUrl: './assassin-droid.component.html',
@@ -24,8 +25,6 @@ export class AssassinDroidComponent {
 
   public assassinDroidWeaponText = ASSASSIN_DROID_WEAPON_TEXT;
 
-  private onDestroy$: Subject<void> = new Subject();
-
   public form = createForm<AssassinDroid>(this, {
     formType: FormType.SUB,
     formControls: {
@@ -35,12 +34,7 @@ export class AssassinDroidComponent {
       weapons: new FormControl([], { validators: [Validators.required] }),
     },
     componentHooks: {
-      ngOnDestroy$: this.onDestroy$.asObservable(),
+      onDestroy: getObservableLifecycle(this).onDestroy,
     },
   });
-
-  public ngOnDestroy(): void {
-    this.onDestroy$.next();
-    this.onDestroy$.complete();
-  }
 }

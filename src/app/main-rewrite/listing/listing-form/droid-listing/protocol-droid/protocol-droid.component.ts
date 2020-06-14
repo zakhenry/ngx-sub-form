@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
+import { getObservableLifecycle, ObservableLifecycle } from 'ngx-observable-lifecycle';
 import { subformComponentProviders } from 'ngx-sub-form';
-import { Subject } from 'rxjs';
 import { createForm } from '../../../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form';
 import { FormType } from '../../../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form.types';
 import { DroidType, Languages, ProtocolDroid } from '../../../../../interfaces/droid.interface';
 
+@ObservableLifecycle()
 @Component({
   selector: 'app-protocol-droid',
   templateUrl: './protocol-droid.component.html',
@@ -14,8 +15,6 @@ import { DroidType, Languages, ProtocolDroid } from '../../../../../interfaces/d
 })
 export class ProtocolDroidComponent {
   public Languages = Languages;
-
-  private onDestroy$: Subject<void> = new Subject();
 
   public form = createForm<ProtocolDroid>(this, {
     formType: FormType.SUB,
@@ -26,12 +25,7 @@ export class ProtocolDroidComponent {
       spokenLanguages: new FormControl(null, { validators: [Validators.required] }),
     },
     componentHooks: {
-      ngOnDestroy$: this.onDestroy$.asObservable(),
+      onDestroy: getObservableLifecycle(this).onDestroy,
     },
   });
-
-  public ngOnDestroy(): void {
-    this.onDestroy$.next();
-    this.onDestroy$.complete();
-  }
 }

@@ -62,14 +62,11 @@ export function createForm<ControlInterface, FormInterface>(
 
   let isRemoved = false;
 
-  options.componentHooks.ngOnDestroy$.pipe(take(1)).subscribe(() => {
+  options.componentHooks.onDestroy.pipe(take(1)).subscribe(() => {
     isRemoved = true;
   });
 
   let first = true;
-  // this doesn't work for now see issue on the function
-  // as a hack I'm asking to get within options an observable for some hooks...
-  // const { ngOnDestroy$ } = getComponentHooks(componentInstance);
 
   // define the `validate` method to improve errors
   // and support nested errors
@@ -160,7 +157,7 @@ export function createForm<ControlInterface, FormInterface>(
   const emitNullOnDestroy$: Observable<null> =
     // emit null when destroyed by default
     isNullOrUndefined(options.emitNullOnDestroy) || options.emitNullOnDestroy
-      ? options.componentHooks.ngOnDestroy$.pipe(mapTo(null))
+      ? options.componentHooks.onDestroy.pipe(mapTo(null))
       : EMPTY;
 
   const sideEffects = {
@@ -192,7 +189,7 @@ export function createForm<ControlInterface, FormInterface>(
   };
 
   forkJoin(sideEffects)
-    .pipe(takeUntil(options.componentHooks.ngOnDestroy$))
+    .pipe(takeUntil(options.componentHooks.onDestroy))
     .subscribe();
 
   // following cannot be part of `forkJoin(sideEffects)`
@@ -202,7 +199,7 @@ export function createForm<ControlInterface, FormInterface>(
   registerOnChange$
     .pipe(
       switchMap(onChange => emitNullOnDestroy$.pipe(tap(value => onChange(value)))),
-      takeUntil(options.componentHooks.ngOnDestroy$.pipe(delay(0))),
+      takeUntil(options.componentHooks.onDestroy.pipe(delay(0))),
     )
     .subscribe();
 

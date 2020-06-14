@@ -13,7 +13,7 @@ import { FormGroupOptions } from '../ngx-sub-form.types';
 import { AreTypesSimilar } from './helpers.types';
 
 export interface ComponentHooks {
-  readonly ngOnDestroy$: Observable<void>;
+  onDestroy: Observable<void>;
 }
 
 export interface FormBindings<ControlInterface> {

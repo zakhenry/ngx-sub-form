@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
+import { getObservableLifecycle, ObservableLifecycle } from 'ngx-observable-lifecycle';
 import { subformComponentProviders } from 'ngx-sub-form';
-import { Subject } from 'rxjs';
 import { Speeder, VehicleType } from 'src/app/interfaces/vehicle.interface';
 import { createForm } from '../../../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form';
 import { FormType } from '../../../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form.types';
 
+@ObservableLifecycle()
 @Component({
   selector: 'app-speeder',
   templateUrl: './speeder.component.html',
@@ -13,8 +14,6 @@ import { FormType } from '../../../../../../../projects/ngx-sub-form/src/lib/new
   providers: subformComponentProviders(SpeederComponent),
 })
 export class SpeederComponent {
-  private onDestroy$: Subject<void> = new Subject();
-
   public form = createForm<Speeder>(this, {
     formType: FormType.SUB,
     formControls: {
@@ -25,12 +24,7 @@ export class SpeederComponent {
       maximumSpeed: new FormControl(null, { validators: [Validators.required] }),
     },
     componentHooks: {
-      ngOnDestroy$: this.onDestroy$.asObservable(),
+      onDestroy: getObservableLifecycle(this).onDestroy,
     },
   });
-
-  public ngOnDestroy(): void {
-    this.onDestroy$.next();
-    this.onDestroy$.complete();
-  }
 }

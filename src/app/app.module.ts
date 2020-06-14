@@ -3,12 +3,10 @@ import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterModule } from '@angular/router';
 import { AppComponent } from './app.component';
-import { RootFComponent } from './root-f/root-f.component';
 import { SharedModule } from './shared/shared.module';
-import { TestNewVersionComponent } from './test-new-version/test-new-version.component';
 
 @NgModule({
-  declarations: [AppComponent, TestNewVersionComponent, RootFComponent],
+  declarations: [AppComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

@@ -16,7 +16,6 @@ import {
   TypedFormGroup,
 } from '../ngx-sub-form-utils';
 import {
-  ComponentHooks,
   ControlValueAccessorComponentInstance,
   FormBindings,
   NgxSubFormArrayOptions,
@@ -76,39 +75,6 @@ export const safelyPatchClassInstance = (componentInstance: any, obj: Object) =>
       newMethod(args);
     };
   });
-};
-
-// following doesn't work anymore with ng9
-// https://github.com/angular/angular/issues/36776
-// there's also a PR that'd fix this here:
-// https://github.com/angular/angular/pull/35464
-export const getComponentHooks = (componentInstance: Object): ComponentHooks => {
-  const ngOnDestroy$$: ReplaySubject<void> = new ReplaySubject(1);
-
-  // console.log('getComponentHooks');
-
-  // safelyPatchClassInstance(componentInstance, {
-  //   ngOnDestroy: () => {
-  //     console.log('DESTROY');
-
-  //     ngOnDestroy$$.next();
-  //   },
-  // });
-
-  // patchClassInstance(componentInstance, {
-  //   ngOnDestroy: () => {
-  //     console.log('VICTORY');
-  //   },
-  // });
-
-  // (componentInstance as any).ngOnDestroy = () => {
-  //   console.log('VICTORY');
-  // };
-  // console.log({ componentInstance });
-
-  return {
-    ngOnDestroy$: ngOnDestroy$$.asObservable(),
-  };
 };
 
 export const getFormGroupErrors = <ControlInterface, FormInterface>(

@@ -7930,6 +7930,13 @@ ng-packagr@9.0.1:
     terser "^4.3.8"
     update-notifier "^4.0.0"
 
+ngx-observable-lifecycle@1.0.1:
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/ngx-observable-lifecycle/-/ngx-observable-lifecycle-1.0.1.tgz#13a19debadd5e9dba38cfd7fbf17ae1f5f2f121a"
+  integrity sha512-TT/yNKKTn4JMibej+5Xjv1eo1WMqvDoHq5+ZoVclrMLnJWPBq36MUtviu8FkEshWpQDR8H2hvHOKC6bRPtY6dg==
+  dependencies:
+    tslib "^1.10.0"
+
 nice-try@^1.0.4:
   version "1.0.5"
   resolved "https://registry.yarnpkg.com/nice-try/-/nice-try-1.0.5.tgz#a3378a7696ce7d223e88fc9b764bd7ef1089e366"

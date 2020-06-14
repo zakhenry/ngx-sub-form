@@ -31,7 +31,9 @@
     "test": "yarn lib:test:watch",
     "commit": "git add . && git-cz",
     "readme:build": "embedme README.md && yarn run prettier README.md --write",
-    "readme:check": "yarn readme:build && ! git status | grep README.md || (echo 'You must commit build and commit changes to README.md!' && exit 1)"
+    "readme:check": "yarn readme:build && ! git status | grep README.md || (echo 'You must commit build and commit changes to README.md!' && exit 1)",
+    "ngcc": "[ ! -f ./node_modules/.bin/ngcc ] || node --max_old_space_size=8000 ./node_modules/.bin/ngcc",
+    "postinstall":"yarn run ngcc"
   },
   "private": true,
   "dependencies": {
@@ -50,6 +52,7 @@
     "commitizen": "4.0.3",
     "core-js": "3.6.4",
     "fast-deep-equal": "3.1.1",
+    "ngx-observable-lifecycle": "1.0.1",
     "rxjs": "6.5.4",
     "tslib": "1.10.0",
     "uuid": "3.4.0",

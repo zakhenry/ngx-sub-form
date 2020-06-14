@@ -1,5 +1,6 @@
 import { Component, Input, Output } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
+import { getObservableLifecycle, ObservableLifecycle } from 'ngx-observable-lifecycle';
 import { Subject } from 'rxjs';
 import { ListingType, OneListing } from 'src/app/interfaces/listing.interface';
 import { createForm } from '../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form';
@@ -18,12 +19,15 @@ interface OneListingForm {
   price: number;
 }
 
+@ObservableLifecycle()
 @Component({
   selector: 'app-listing-form',
   templateUrl: './listing-form.component.html',
   styleUrls: ['./listing-form.component.scss'],
 })
 export class ListingFormComponent {
+  public ListingType: typeof ListingType = ListingType;
+
   private input$: Subject<OneListing | undefined> = new Subject();
   @Input() set listing(value: OneListing | undefined) {
     this.input$.next(value);
@@ -35,8 +39,6 @@ export class ListingFormComponent {
   }
 
   @Output() listingUpdated: Subject<OneListing> = new Subject();
-
-  private onDestroy$: Subject<void> = new Subject();
 
   public form = createForm<OneListing, OneListingForm>(this, {
     formType: FormType.ROOT,
@@ -77,14 +79,7 @@ export class ListingFormComponent {
       }
     },
     componentHooks: {
-      ngOnDestroy$: this.onDestroy$.asObservable(),
+      onDestroy: getObservableLifecycle(this).onDestroy,
     },
   });
-
-  public ListingType: typeof ListingType = ListingType;
-
-  public ngOnDestroy(): void {
-    this.onDestroy$.next();
-    this.onDestroy$.complete();
-  }
 }

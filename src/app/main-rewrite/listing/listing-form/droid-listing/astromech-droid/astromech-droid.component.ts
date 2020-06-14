@@ -1,11 +1,12 @@
 import { Component } from '@angular/core';
 import { FormControl, Validators } from '@angular/forms';
+import { getObservableLifecycle, ObservableLifecycle } from 'ngx-observable-lifecycle';
 import { subformComponentProviders } from 'ngx-sub-form';
-import { Subject } from 'rxjs';
 import { createForm } from '../../../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form';
 import { FormType } from '../../../../../../../projects/ngx-sub-form/src/lib/new/ngx-sub-form.types';
 import { AstromechDroid, AstromechDroidShape, DroidType } from '../../../../../interfaces/droid.interface';
 
+@ObservableLifecycle()
 @Component({
   selector: 'app-astromech-droid',
   templateUrl: './astromech-droid.component.html',
@@ -14,8 +15,6 @@ import { AstromechDroid, AstromechDroidShape, DroidType } from '../../../../../i
 })
 export class AstromechDroidComponent {
   public AstromechDroidShape = AstromechDroidShape;
-
-  private onDestroy$: Subject<void> = new Subject();
 
   public form = createForm<AstromechDroid>(this, {
     formType: FormType.SUB,
@@ -27,12 +26,7 @@ export class AstromechDroidComponent {
       shape: new FormControl(null, { validators: [Validators.required] }),
     },
     componentHooks: {
-      ngOnDestroy$: this.onDestroy$.asObservable(),
+      onDestroy: getObservableLifecycle(this).onDestroy,
     },
   });
-
-  public ngOnDestroy(): void {
-    this.onDestroy$.next();
-    this.onDestroy$.complete();
-  }
 }
